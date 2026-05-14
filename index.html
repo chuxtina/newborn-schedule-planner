@@ -1,0 +1,1697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Newborn Schedule Planner — Research-Backed</title>
+<style>
+  :root {
+    --bg: #FAF7F2;
+    --card: #FFFFFF;
+    --ink: #1F2421;
+    --ink-soft: #5A5F5C;
+    --ink-faint: #8A8F8C;
+    --border: #E8E3D9;
+    --border-strong: #D5CFC2;
+    --sage: #7A9A7E;
+    --sage-dark: #4F6B53;
+    --sage-faint: #EAF0EA;
+    --feed: #D88560;
+    --feed-soft: #F6E2D5;
+    --pump: #A88BAA;
+    --pump-soft: #ECE2EE;
+    --play: #D9A85F;
+    --play-soft: #F7E9CF;
+    --sleep: #6E89A8;
+    --sleep-soft: #DEE6EE;
+    --evidence-strong: #7A9A7E;
+    --evidence-mod: #C9A23E;
+    --evidence-low: #B07A55;
+    --removal-red: #B23A2A;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  .page { max-width: 1100px; margin: 0 auto; padding: 48px 24px 80px; }
+  header.hero { margin-bottom: 36px; }
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 11px;
+    color: var(--sage-dark);
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  h1 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-weight: 500;
+    font-size: 40px;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    margin: 0 0 12px;
+    color: var(--ink);
+  }
+  .lede {
+    font-size: 16px;
+    color: var(--ink-soft);
+    max-width: 680px;
+    margin: 0;
+  }
+  .layout {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+  @media (max-width: 880px) { .layout { grid-template-columns: 1fr; } }
+
+  /* ----- Inputs ----- */
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+  }
+  .panel h2 {
+    font-family: Georgia, serif;
+    font-weight: 500;
+    font-size: 20px;
+    margin: 0 0 18px;
+    color: var(--ink);
+  }
+  .field { margin-bottom: 22px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 8px;
+    letter-spacing: 0.01em;
+  }
+  .field .hint {
+    font-size: 12px;
+    color: var(--ink-faint);
+    margin-top: 6px;
+  }
+  input[type="date"], input[type="time"] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    background: var(--card);
+    font-size: 14px;
+    color: var(--ink);
+    font-family: inherit;
+  }
+  input[type="range"] {
+    width: 100%;
+    accent-color: var(--sage);
+  }
+  .slider-wrap {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 4px;
+  }
+  .slider-value {
+    text-align: center;
+    font-size: 13px;
+    color: var(--ink);
+    font-weight: 600;
+    margin-top: 6px;
+  }
+  .seg {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 2px;
+  }
+  .seg button {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--border-strong);
+    background: var(--card);
+    color: var(--ink-soft);
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .seg button:hover { color: var(--ink); }
+  .seg button.active {
+    background: var(--sage-faint);
+    border-color: var(--sage);
+    color: var(--sage-dark);
+    font-weight: 600;
+  }
+
+  /* ----- Output ----- */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 880px) { .summary { grid-template-columns: repeat(2, 1fr); } }
+  .stat {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .stat .lbl {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink-faint);
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .stat .val {
+    font-family: Georgia, serif;
+    font-size: 22px;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+  .stat .sub {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 4px;
+  }
+  .evidence {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 6px;
+  }
+  .ev-strong { background: var(--sage-faint); color: var(--sage-dark); }
+  .ev-mod { background: #FAF1D6; color: #7A6520; }
+  .ev-low { background: #F4E4D6; color: #7A4F2C; }
+
+  /* ----- Schedules ----- */
+  .schedules-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .schedules-header h2 {
+    font-family: Georgia, serif;
+    font-weight: 500;
+    font-size: 22px;
+    margin: 0;
+  }
+  .legend {
+    display: flex;
+    gap: 14px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    flex-wrap: wrap;
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch {
+    width: 10px; height: 10px; border-radius: 2px; display: inline-block;
+  }
+  .sw-feed { background: var(--feed); }
+  .sw-pump { background: var(--pump); }
+  .sw-play { background: var(--play); }
+  .sw-sleep { background: var(--sleep); }
+
+  .schedule-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 24px;
+    margin-bottom: 16px;
+  }
+  .schedule-card h3 {
+    font-family: Georgia, serif;
+    font-weight: 500;
+    font-size: 18px;
+    margin: 0 0 4px;
+    color: var(--ink);
+  }
+  .schedule-card .philosophy {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin: 0 0 16px;
+  }
+  /* Vertical timeline */
+  .schedule-body {
+    display: grid;
+    grid-template-columns: 44px 44px 1fr;
+    gap: 12px;
+    margin-top: 14px;
+  }
+  .timeline {
+    position: relative;
+    width: 44px;
+    height: 720px;
+    background: #F4F0E8;
+    border-radius: 6px;
+    overflow: visible;
+  }
+  .block {
+    position: absolute;
+    left: 0; right: 0;
+    border-bottom: 1px solid rgba(255,255,255,0.5);
+  }
+  .block.feed { background: var(--feed); }
+  .block.pump { background: var(--pump); }
+  .block.play { background: var(--play); }
+  .block.sleep { background: var(--sleep); }
+  .hours-axis {
+    position: relative;
+    width: 44px;
+    height: 720px;
+    font-size: 11px;
+    color: var(--ink-faint);
+    font-variant-numeric: tabular-nums;
+  }
+  .hours-axis .tick {
+    position: absolute;
+    left: 0;
+    transform: translateY(-50%);
+    white-space: nowrap;
+  }
+  .schedule-events {
+    display: flex;
+    flex-direction: column;
+    font-size: 13px;
+    color: var(--ink-soft);
+    min-width: 0;
+  }
+  .schedule-events .ev {
+    display: grid;
+    grid-template-columns: 70px 18px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .schedule-events .ev:last-child { border-bottom: 0; }
+  .schedule-events .ev.feed { color: var(--ink); }
+  .schedule-events .ev.pump,
+  .schedule-events .ev.nurse { color: var(--removal-red); }
+  .schedule-events .ev.pump .time,
+  .schedule-events .ev.nurse .time { color: var(--removal-red); }
+  .schedule-events .ev.pump .vol,
+  .schedule-events .ev.nurse .vol { color: var(--removal-red); opacity: 0.85; }
+  .schedule-events .ev.play { color: var(--ink-faint); font-size: 12px; }
+  .schedule-events .ev.sleep { color: var(--ink-faint); font-size: 12px; }
+  .schedule-events .icon {
+    width: 18px; height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .schedule-events .icon svg {
+    width: 16px; height: 16px;
+    display: block;
+  }
+  .legend-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px; height: 16px;
+  }
+  .legend-icon svg {
+    width: 14px; height: 14px;
+    display: block;
+  }
+  .schedule-events .time {
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    min-width: 70px;
+  }
+  .schedule-events .vol {
+    color: var(--ink-soft);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .schedule-events .ev.feed .label,
+  .schedule-events .ev.pump .label { font-weight: 600; }
+  .totals {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .totals strong { color: var(--ink); font-weight: 600; }
+
+  /* ----- Honest caveat ----- */
+  .caveat {
+    background: #FBF4E6;
+    border: 1px solid #EAD9B0;
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 13px;
+    color: #6B5A2E;
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+  .caveat strong { color: #4E411F; }
+
+  /* ----- Supply alert ----- */
+  .alert {
+    border-radius: 12px;
+    padding: 16px 18px 14px;
+    margin-bottom: 24px;
+    line-height: 1.5;
+    font-size: 13px;
+    display: none;
+  }
+  .alert.visible { display: block; }
+  .alert .head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+  .alert .head .badge {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: white;
+    font-family: serif;
+    font-weight: 700;
+  }
+  .alert p { margin: 0 0 8px; }
+  .alert p:last-child { margin-bottom: 0; }
+  .alert ul { margin: 6px 0 0; padding-left: 18px; }
+  .alert li { margin-bottom: 4px; }
+  .alert.blocker { background: #FBE6E0; border: 1px solid #E2A99B; color: #6B2E1F; }
+  .alert.blocker .head { color: #8C2914; }
+  .alert.blocker .badge { background: #C24A2A; }
+  .alert.strong { background: #FBEFE0; border: 1px solid #E5C499; color: #6E4D1F; }
+  .alert.strong .head { color: #8A5E1A; }
+  .alert.strong .badge { background: #C9883A; }
+  .alert.moderate { background: #F4F0DC; border: 1px solid #D9CC8D; color: #5E5424; }
+  .alert.moderate .head { color: #7A6520; }
+  .alert.moderate .badge { background: #C9A23E; }
+  .alert.info { background: #E8EFE8; border: 1px solid #B8CDB8; color: #2F4A30; }
+  .alert.info .head { color: #4F6B53; }
+  .alert.info .badge { background: var(--sage); }
+
+  /* Sleep overlay on (vertical) timeline */
+  .sleep-band {
+    position: absolute;
+    left: -3px; right: -3px;
+    background: rgba(110, 137, 168, 0.13);
+    border-top: 1px dashed rgba(110, 137, 168, 0.5);
+    border-bottom: 1px dashed rgba(110, 137, 168, 0.5);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Production plan callout */
+  .production {
+    background: var(--sage-faint);
+    border: 1px solid #C6D6C5;
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 24px;
+  }
+  .production h3 {
+    font-family: Georgia, serif;
+    font-weight: 500;
+    font-size: 17px;
+    margin: 0 0 12px;
+    color: var(--sage-dark);
+  }
+  .production .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 10px;
+  }
+  @media (max-width: 600px) { .production .row { grid-template-columns: 1fr; } }
+  .production .metric {
+    background: white;
+    border-radius: 8px;
+    padding: 10px 14px;
+    border: 1px solid #D4E1D4;
+  }
+  .production .metric .lbl {
+    font-size: 11px;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+  .production .metric .val {
+    font-family: Georgia, serif;
+    font-size: 20px;
+    color: var(--ink);
+  }
+  .production .metric .sub {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 2px;
+  }
+  .production p {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: var(--sage-dark);
+    line-height: 1.5;
+  }
+  .production p:first-of-type { color: var(--ink-soft); }
+
+  /* ----- Explanation panel ----- */
+  .explanation {
+    margin-top: 36px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px 32px;
+  }
+  .explanation h2 {
+    font-family: Georgia, serif;
+    font-weight: 500;
+    font-size: 22px;
+    margin: 0 0 6px;
+  }
+  .explanation .intro {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin: 0 0 20px;
+    max-width: 720px;
+  }
+  .explain-item {
+    padding: 16px 0;
+    border-top: 1px solid var(--border);
+  }
+  .explain-item:first-of-type { border-top: 0; padding-top: 0; }
+  .explain-item h3 {
+    font-family: Georgia, serif;
+    font-weight: 500;
+    font-size: 16px;
+    color: var(--ink);
+    margin: 0 0 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .explain-item h3 .icon {
+    width: 18px; height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .explain-item h3 .icon svg {
+    width: 16px; height: 16px;
+  }
+  .explain-item p {
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+    margin: 6px 0;
+  }
+  .explain-item ul {
+    margin: 6px 0 0;
+    padding-left: 20px;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
+  .explain-item li { margin-bottom: 4px; }
+  .explain-item strong { color: var(--ink); font-weight: 600; }
+
+  /* ----- Sources ----- */
+  .sources {
+    margin-top: 36px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+  }
+  .sources h2 {
+    font-family: Georgia, serif;
+    font-weight: 500;
+    font-size: 22px;
+    margin: 0 0 8px;
+  }
+  .sources .intro {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin: 0 0 18px;
+    max-width: 720px;
+  }
+  .sources ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 14px;
+  }
+  .sources li {
+    font-size: 13px;
+    color: var(--ink);
+    padding-left: 18px;
+    position: relative;
+  }
+  .sources li::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 8px;
+    width: 6px; height: 6px;
+    background: var(--sage);
+    border-radius: 50%;
+  }
+  .sources .src-title { font-weight: 600; }
+  .sources .src-meta { color: var(--ink-soft); }
+  .sources .src-note { display: block; color: var(--ink-soft); font-size: 12px; margin-top: 2px; }
+
+  footer {
+    margin-top: 32px;
+    font-size: 12px;
+    color: var(--ink-faint);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="hero">
+  <div class="eyebrow">Research-backed planner · 0–3 months</div>
+  <h1>Newborn schedule planner</h1>
+  <p class="lede">Adjust your priorities below and the planner generates three sample 24-hour schedules. Every milk-volume and sleep number on this page is cited in the sources panel at the bottom — and where the evidence is thin, it's labeled honestly.</p>
+</header>
+
+<div class="layout">
+
+  <!-- ============ INPUTS ============ -->
+  <aside class="panel" id="inputs">
+    <h2>Your inputs</h2>
+
+    <div class="field">
+      <label for="birthdate">Baby's birth date</label>
+      <input type="date" id="birthdate" />
+      <div class="hint" id="age-readout"></div>
+    </div>
+
+    <div class="field">
+      <label for="waketime">Your wake time</label>
+      <input type="time" id="waketime" value="09:30" />
+    </div>
+
+    <div class="field">
+      <label for="bedtime">Your bedtime</label>
+      <input type="time" id="bedtime" value="00:30" />
+      <div class="hint" id="sleep-readout">Anchors the schedule and tells the planner when not to put pumps.</div>
+    </div>
+
+    <div class="field">
+      <label for="bmpct">Breastmilk vs. formula split</label>
+      <input type="range" id="bmpct" min="0" max="100" step="5" value="100" />
+      <div class="slider-wrap"><span>0% BM</span><span>100% BM</span></div>
+      <div class="slider-value" id="bmpct-readout">100% breastmilk · 0% formula</div>
+    </div>
+
+    <div class="field">
+      <label>Feeding method</label>
+      <div class="seg" id="method-seg">
+        <button data-val="direct">Direct nurse</button>
+        <button data-val="bottle">Bottle only</button>
+        <button data-val="both" class="active">Both</button>
+      </div>
+      <div class="hint">"Both" means some feeds at the breast, some from a bottle.</div>
+    </div>
+
+    <div class="field">
+      <label>Pumping goal</label>
+      <div class="seg" id="pump-seg">
+        <button data-val="none" class="active">None</button>
+        <button data-val="maintenance">Maintenance</button>
+        <button data-val="establish">Establish supply</button>
+        <button data-val="exclusive">Exclusive pumping</button>
+      </div>
+      <div class="hint" id="pump-hint">No pumping sessions in the schedule.</div>
+    </div>
+
+    <div class="field">
+      <label>Pump during sleep hours?</label>
+      <div class="seg" id="motn-seg">
+        <button data-val="skip" class="active">Skip middle-of-the-night</button>
+        <button data-val="include">Include night pumps</button>
+      </div>
+      <div class="hint">Defaults to skip. If you skip and your overnight gap is long, the planner will flag any supply trade-off.</div>
+    </div>
+  </aside>
+
+  <!-- ============ OUTPUT ============ -->
+  <main>
+    <div class="summary" id="summary"></div>
+
+    <div class="caveat">
+      <strong>One honest caveat.</strong> Newborns don't follow schedules — they follow hunger and sleep pressure. The strongest evidence supports <em>responsive (cue-based) feeding</em> in the first months, not rigid clocks (AAP, 2022). Treat these schedules as a loose frame for your day, not a prescription. The most useful number on this page is the <em>daily milk target</em>; the times around it are just one plausible way to distribute it.
+    </div>
+
+    <div class="production" id="production"></div>
+
+    <div class="alert" id="supply-alert"></div>
+
+    <div class="schedules-header">
+      <h2>Three sample schedules</h2>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <div id="schedules"></div>
+
+    <section class="explanation" id="explanation"></section>
+
+    <section class="sources">
+      <h2>Where these numbers come from</h2>
+      <p class="intro">Every claim is tied to a primary source or major guideline. Evidence quality is labeled: <span class="evidence ev-strong">Strong</span> = multiple peer-reviewed studies or major-body guideline; <span class="evidence ev-mod">Moderate</span> = single large study or consistent practitioner consensus with some empirical support; <span class="evidence ev-low">Practitioner consensus</span> = widely taught, limited rigorous evidence.</p>
+      <ul>
+        <li>
+          <span class="src-title">Kent JC et al. (2006).</span> <span class="src-meta">"Volume and frequency of breastfeedings and fat content of breast milk throughout the day." <em>Pediatrics</em>, 117(3), e387–e395.</span>
+          <span class="src-note">Source for the 478–1356 mL/day range and ~788 mL/day mean intake in exclusively breastfed babies 1–6 months. <span class="evidence ev-strong">Strong</span></span>
+        </li>
+        <li>
+          <span class="src-title">American Academy of Pediatrics (2022).</span> <span class="src-meta">"Policy Statement: Breastfeeding and the Use of Human Milk." <em>Pediatrics</em>, 150(1).</span>
+          <span class="src-note">8–12 feeds per 24h for breastfed newborns; cue-based / responsive feeding. <span class="evidence ev-strong">Strong</span></span>
+        </li>
+        <li>
+          <span class="src-title">AAP HealthyChildren.org.</span> <span class="src-meta">"Amount and Schedule of Formula Feedings."</span>
+          <span class="src-note">Formula volumes by age and the 2.5 oz × weight-in-lbs/day rule of thumb. <span class="evidence ev-strong">Strong</span></span>
+        </li>
+        <li>
+          <span class="src-title">Hirshkowitz M et al. (2015).</span> <span class="src-meta">"National Sleep Foundation's sleep time duration recommendations." <em>Sleep Health</em>, 1(1), 40–43.</span>
+          <span class="src-note">14–17 hours/day recommended sleep for newborns 0–3 months. <span class="evidence ev-strong">Strong</span></span>
+        </li>
+        <li>
+          <span class="src-title">Iglowstein I et al. (2003).</span> <span class="src-meta">"Sleep duration from infancy to adolescence: reference values and generational trends." <em>Pediatrics</em>, 111(2), 302–307.</span>
+          <span class="src-note">Reference values: ~14.8h total at 1 month (8.7h night, 6.1h day); ~14.2h at 3 months. <span class="evidence ev-strong">Strong</span></span>
+        </li>
+        <li>
+          <span class="src-title">AAP Section on Council on Communications and Media + AAP tummy time guidance.</span> <span class="src-meta">"Back to Sleep, Tummy to Play."</span>
+          <span class="src-note">Short tummy-time sessions multiple times daily from birth, building to ~15–30 min/day total by ~7 weeks. <span class="evidence ev-strong">Strong</span></span>
+        </li>
+        <li>
+          <span class="src-title">Kent JC et al. (2008).</span> <span class="src-meta">"Importance of vacuum for breastmilk expression." <em>Breastfeeding Medicine</em>, 3(1), 11–19.</span>
+          <span class="src-note">Pump output and frequency for establishing and maintaining supply. <span class="evidence ev-mod">Moderate</span></span>
+        </li>
+        <li>
+          <span class="src-title">Mohrbacher N. (2020).</span> <span class="src-meta"><em>Breastfeeding Answers</em> (2nd ed.).</span>
+          <span class="src-note">Lactation reference compiled from research; basis for "milk comes in" timing and exclusive-pumping cadence. <span class="evidence ev-mod">Moderate</span></span>
+        </li>
+        <li>
+          <span class="src-title">Wake-window guidance (0–3 months).</span> <span class="src-meta">Synthesis from pediatric sleep practitioners (Mindell, West, Karp) and observational data.</span>
+          <span class="src-note">30–90 min wake windows are widely taught and clinically consistent, but the empirical literature is thin. Use as a soft signal, not a rule. <span class="evidence ev-low">Practitioner consensus</span></span>
+        </li>
+        <li>
+          <span class="src-title">"Eat-Play-Sleep" structure.</span> <span class="src-meta">Hogg T. (2001), <em>The Baby Whisperer</em>; Babywise-adjacent literature.</span>
+          <span class="src-note">Popular framework. No randomized evidence shows superior outcomes for newborns vs. responsive feeding; some lactation researchers caution it can suppress milk supply in early weeks if applied rigidly. Included as one option, not a recommendation. <span class="evidence ev-low">Practitioner consensus</span></span>
+        </li>
+      </ul>
+    </section>
+
+    <footer>Built for Christina · For information, not medical advice. Talk to your pediatrician about Alessi's individual needs.</footer>
+  </main>
+</div>
+
+</div>
+
+<script>
+// =====================================================================
+// DATA TABLES — research-backed numbers by baby age in days
+// =====================================================================
+
+// Returns daily milk target in mL for breastfed baby at given age (days)
+// Source: Kent et al. 2006 (Pediatrics) for steady-state; Mohrbacher 2020 for week 1 ramp-up
+function dailyBreastmilkMl(ageDays) {
+  if (ageDays <= 0) return 30;       // Day 1: ~30 mL (colostrum, small frequent feeds)
+  if (ageDays === 1) return 60;      // Day 2
+  if (ageDays === 2) return 200;     // Day 3, milk "comes in"
+  if (ageDays === 3) return 350;
+  if (ageDays === 4) return 500;
+  if (ageDays <= 6) return 600;
+  if (ageDays <= 13) return 700;
+  if (ageDays <= 27) return 780;     // ~Week 2-4 reaching plateau
+  return 788;                        // 1–6 mo plateau, Kent mean
+}
+
+// Daily formula target in mL (slightly higher than BM; AAP)
+function dailyFormulaMl(ageDays) {
+  if (ageDays <= 0) return 60;
+  if (ageDays === 1) return 120;
+  if (ageDays === 2) return 240;
+  if (ageDays === 3) return 360;
+  if (ageDays <= 6) return 480;
+  if (ageDays <= 13) return 600;
+  if (ageDays <= 27) return 780;     // ~26 oz
+  if (ageDays <= 60) return 870;     // ~29 oz, 1-2 mo
+  return 900;                         // ~30 oz, 2-3 mo
+}
+
+// Recommended feeds per 24h
+function feedsPerDay(ageDays, formulaPct) {
+  // Breastfed: 8-12; Formula: 6-8
+  // Blend by formula percentage
+  const bm = ageDays < 14 ? 11 : 9;
+  const ff = ageDays < 14 ? 8 : 7;
+  return Math.round(bm * (1 - formulaPct) + ff * formulaPct);
+}
+
+// Total sleep hours per 24h (Iglowstein 2003 reference values)
+function totalSleepHours(ageDays) {
+  if (ageDays < 14) return 16;
+  if (ageDays < 30) return 15.5;
+  if (ageDays < 60) return 15;
+  return 14.5;
+}
+
+// Wake window in minutes
+function wakeWindowMin(ageDays) {
+  if (ageDays < 14) return 45;
+  if (ageDays < 30) return 60;
+  if (ageDays < 60) return 75;
+  return 90;
+}
+
+// Compute the daily removal plan: how many nursings vs pumps to meet the BM target.
+// Nursings count as removals — that's the whole point.
+// Returns { nursings, pumps, totalRemovals, bmFeeds }
+function removalPlan(goal, ageDays, method, formulaPct, feeds) {
+  const bmPct = 1 - formulaPct;
+  // BM feed events per day — every time the baby eats BM (whether from breast or bottle)
+  const bmFeeds = Math.round(feeds * bmPct);
+
+  if (goal === 'none') {
+    // No pumping. All BM goes through the breast.
+    return { nursings: bmFeeds, pumps: 0, totalRemovals: bmFeeds, bmFeeds };
+  }
+
+  if (goal === 'maintenance') {
+    // Supply is already established. A small number of pumps preserves output
+    // during stretches when the baby isn't nursing (work, errands).
+    const pumps = ageDays < 30 ? 3 : 2;
+    // Nursings = remaining BM feeds after subtracting the pumped-bottle replacements
+    const nursings = Math.max(0, bmFeeds - pumps);
+    return { nursings, pumps, totalRemovals: nursings + pumps, bmFeeds };
+  }
+
+  if (goal === 'establish') {
+    // Total removals needed = bmFeeds. In the first 2 weeks, boost frequency
+    // to drive prolactin calibration (Mohrbacher 2020).
+    let totalRemovals = bmFeeds;
+    if (ageDays < 14) totalRemovals = Math.max(bmFeeds, 8);
+
+    let nursings;
+    if (method === 'direct') nursings = bmFeeds;          // all BM at breast
+    else if (method === 'both') nursings = Math.floor(bmFeeds / 2); // half at breast
+    else nursings = 0;                                     // bottle only: nothing at breast
+
+    const pumps = Math.max(0, totalRemovals - nursings);
+    return { nursings, pumps, totalRemovals: nursings + pumps, bmFeeds };
+  }
+
+  if (goal === 'exclusive') {
+    // All BM via pumped bottle, no nursing. Pump for every BM feed event.
+    // Add frequency boost in first 2 weeks.
+    let pumps = bmFeeds;
+    if (ageDays < 14) pumps = Math.max(bmFeeds, 9);
+    return { nursings: 0, pumps, totalRemovals: pumps, bmFeeds };
+  }
+
+  return { nursings: 0, pumps: 0, totalRemovals: 0, bmFeeds };
+}
+
+// =====================================================================
+// HELPERS
+// =====================================================================
+function mlToOz(ml) { return ml / 29.5735; }
+function fmtOz(ml) { return mlToOz(ml).toFixed(1) + ' oz'; }
+function fmtMl(ml) { return Math.round(ml) + ' mL'; }
+function ageInDays(birthISO) {
+  const b = new Date(birthISO);
+  const now = new Date();
+  return Math.max(0, Math.floor((now - b) / (1000*60*60*24)));
+}
+function ageReadable(days) {
+  if (days < 7) return days + (days === 1 ? ' day' : ' days') + ' old';
+  if (days < 28) {
+    const w = Math.floor(days / 7);
+    const d = days % 7;
+    return w + 'w ' + d + 'd old';
+  }
+  const months = (days / 30.44).toFixed(1);
+  return months + ' months old';
+}
+function pad(n) { return n < 10 ? '0' + n : '' + n; }
+function fmtTime(minFromMidnight) {
+  let m = ((minFromMidnight % 1440) + 1440) % 1440;
+  const h24 = Math.floor(m / 60);
+  const mm = Math.round(m % 60);
+  const h12 = ((h24 + 11) % 12) + 1;
+  const ampm = h24 < 12 ? 'am' : 'pm';
+  return h12 + ':' + pad(mm) + ampm;
+}
+
+// =====================================================================
+// SCHEDULE GENERATION
+// =====================================================================
+// Returns an array of events: { startMin, durMin, type, label, ml? }
+// types: 'feed', 'pump', 'play', 'sleep'
+
+// Unified schedule generator.
+// Removal events (nursings + pumps) are placed evenly within the appropriate window
+// (awake window if skipMOTN, else 24h). Style controls a stylistic variant.
+// Bottle feeds are placed in the gaps between nursings to maintain baby's feed cadence.
+function genSchedule(inputs, style) {
+  const { feeds, wakeStartMin, bedtimeMin, skipMOTN, mlPerFeed, formulaPct, ww, plan } = inputs;
+
+  // Edge case: if there are no bottle feeds AND no pumps, then nursing is the only
+  // way the baby eats. Can't actually skip MOTN — baby has to be nursed at night.
+  // (This happens with 100% BM + direct nursing + goals 'none' or 'establish').
+  const totalBottles = Math.max(0, feeds - plan.nursings);
+  const effectiveSkipMOTN = (totalBottles === 0 && plan.pumps === 0) ? false : skipMOTN;
+
+  // Window in which removals are allowed
+  let windowStart = wakeStartMin;
+  let windowEnd = effectiveSkipMOTN ? bedtimeMin : wakeStartMin + 1440;
+  if (windowEnd <= windowStart) windowEnd += 1440;
+  const windowDur = windowEnd - windowStart;
+  const MIN_SPACING = 90;
+
+  const nursingCount = plan.nursings;
+  const pumpCount = plan.pumps;
+  let totalRemovals = nursingCount + pumpCount;
+
+  // If the window can't fit all removals at MIN_SPACING, drop pumps (not nursings)
+  const maxFit = Math.floor(windowDur / MIN_SPACING) + 1;
+  let actualNursings = Math.min(nursingCount, maxFit);
+  let actualPumps = Math.max(0, Math.min(pumpCount, maxFit - actualNursings));
+  totalRemovals = actualNursings + actualPumps;
+
+  // === Step 1: Place removals evenly in window ===
+  let removalTimes = [];
+  if (totalRemovals > 0) {
+    if (style === 'bookended' && totalRemovals >= 2) {
+      // First at wake, last at bedtime, rest evenly between — extends overnight stretch
+      const spacing = windowDur / (totalRemovals - 1);
+      for (let i = 0; i < totalRemovals; i++) {
+        // Push first slightly forward and last slightly back to keep "before bed" feel
+        let t = windowStart + i * spacing;
+        if (i === totalRemovals - 1) t = Math.min(t, windowEnd - 15);
+        removalTimes.push(t);
+      }
+    } else if (style === 'clock') {
+      // Clock-friendly: snap evenly-spaced times to nearest 15 minutes
+      const spacing = windowDur / totalRemovals;
+      for (let i = 0; i < totalRemovals; i++) {
+        const t = windowStart + i * spacing + spacing / 2;
+        removalTimes.push(Math.round(t / 15) * 15);
+      }
+    } else {
+      // Centered: even spacing with half-spacing buffer from window edges
+      const spacing = windowDur / totalRemovals;
+      for (let i = 0; i < totalRemovals; i++) {
+        removalTimes.push(windowStart + i * spacing + spacing / 2);
+      }
+    }
+  }
+  removalTimes = removalTimes.map(t => ((t % 1440) + 1440) % 1440);
+
+  // === Step 2: Designate nursings within the removal set (evenly distributed) ===
+  const isNurseFlag = new Array(totalRemovals).fill(false);
+  if (actualNursings > 0 && actualNursings <= totalRemovals) {
+    const step = totalRemovals / actualNursings;
+    for (let k = 0; k < actualNursings; k++) {
+      isNurseFlag[Math.round(k * step) % totalRemovals] = true;
+    }
+  }
+  const nursingTimes = [];
+  const pumpTimes = [];
+  for (let i = 0; i < totalRemovals; i++) {
+    if (isNurseFlag[i]) nursingTimes.push(removalTimes[i]);
+    else pumpTimes.push(removalTimes[i]);
+  }
+
+  // === Step 3: Place bottle feeds in the gaps so baby still eats ~every feedInterval ===
+  const bottleCount = Math.max(0, feeds - actualNursings);
+  const feedInterval = 1440 / feeds;
+  const bottleTimes = [];
+
+  if (bottleCount > 0) {
+    if (nursingTimes.length === 0) {
+      // No nursings — distribute bottles evenly across 24h
+      for (let i = 0; i < bottleCount; i++) {
+        bottleTimes.push((wakeStartMin + i * feedInterval + feedInterval / 2) % 1440);
+      }
+    } else {
+      // Compute gaps between consecutive nursings (treat day as ring)
+      const sortedN = [...nursingTimes].sort((a, b) => a - b);
+      const gaps = [];
+      for (let i = 0; i < sortedN.length; i++) {
+        const curr = sortedN[i];
+        const next = i + 1 < sortedN.length ? sortedN[i + 1] : sortedN[0] + 1440;
+        gaps.push({ start: curr, end: next, size: next - curr });
+      }
+      // Desired bottles per gap so total baby feeds spacing approximates feedInterval
+      const desired = gaps.map(g => Math.max(0, Math.round(g.size / feedInterval) - 1));
+      let total = desired.reduce((a, b) => a + b, 0);
+      // Adjust to exactly match bottleCount
+      while (total < bottleCount) {
+        let bestIdx = 0, bestRoom = -Infinity;
+        for (let i = 0; i < gaps.length; i++) {
+          const room = gaps[i].size / (desired[i] + 1);
+          if (room > bestRoom) { bestRoom = room; bestIdx = i; }
+        }
+        desired[bestIdx]++;
+        total++;
+      }
+      while (total > bottleCount) {
+        let bestIdx = -1, bestRoom = Infinity;
+        for (let i = 0; i < gaps.length; i++) {
+          if (desired[i] === 0) continue;
+          const room = gaps[i].size / desired[i];
+          if (room < bestRoom) { bestRoom = room; bestIdx = i; }
+        }
+        if (bestIdx === -1) break;
+        desired[bestIdx]--;
+        total--;
+      }
+      // Place bottles within each gap (evenly)
+      for (let i = 0; i < gaps.length; i++) {
+        const n = desired[i];
+        if (n === 0) continue;
+        const sub = gaps[i].size / (n + 1);
+        for (let k = 1; k <= n; k++) {
+          bottleTimes.push((gaps[i].start + k * sub) % 1440);
+        }
+      }
+    }
+  }
+
+  // === Step 4: Classify bottles as formula vs BM ===
+  const formulaCount = Math.round(feeds * formulaPct);
+  const sortedBottles = [...bottleTimes].sort((a, b) => a - b);
+  const isFormulaArr = new Array(sortedBottles.length).fill(false);
+  if (formulaCount >= sortedBottles.length) {
+    isFormulaArr.fill(true);
+  } else if (formulaCount > 0 && sortedBottles.length > 0) {
+    const step = sortedBottles.length / formulaCount;
+    for (let k = 0; k < formulaCount; k++) {
+      isFormulaArr[Math.round(k * step) % sortedBottles.length] = true;
+    }
+  }
+
+  // === Step 5: Build event list ===
+  const events = [];
+  for (const t of nursingTimes) {
+    events.push({ startMin: t, durMin: 28, type: 'feed', label: 'Nurse', ml: mlPerFeed, isFormula: false, isRemoval: true });
+  }
+  for (const t of pumpTimes) {
+    events.push({ startMin: t, durMin: 20, type: 'pump', label: 'Pump' });
+  }
+  for (let i = 0; i < sortedBottles.length; i++) {
+    const isF = isFormulaArr[i];
+    events.push({
+      startMin: sortedBottles[i], durMin: 25, type: 'feed',
+      label: isF ? 'Formula bottle' : 'BM bottle (pumped)',
+      ml: mlPerFeed, isFormula: isF, isRemoval: false
+    });
+  }
+
+  // === Step 6: Add play/sleep between feed events ===
+  // Sort feeds, fill the gap between each consecutive feed with play (daytime) + sleep
+  const feedEvents = events.filter(e => e.type === 'feed').sort((a, b) => a.startMin - b.startMin);
+  for (let i = 0; i < feedEvents.length; i++) {
+    const f = feedEvents[i];
+    const nextF = i + 1 < feedEvents.length ? feedEvents[i + 1].startMin : feedEvents[0].startMin + 1440;
+    const gap = ((nextF - f.startMin) + 1440) % 1440 || 1440;
+    const afterEnd = (f.startMin + f.durMin) % 1440;
+    const hour = Math.floor(f.startMin / 60);
+    const inDay = hour >= 7 && hour <= 20;
+    if (inDay) {
+      const playDur = Math.min(ww, Math.max(5, gap - f.durMin - 15));
+      events.push({ startMin: afterEnd, durMin: playDur, type: 'play', label: 'Awake / play' });
+      const sleepStart = (afterEnd + playDur) % 1440;
+      const sleepDur = Math.max(10, gap - f.durMin - playDur);
+      events.push({ startMin: sleepStart, durMin: sleepDur, type: 'sleep', label: 'Nap' });
+    } else {
+      events.push({ startMin: afterEnd, durMin: 10, type: 'play', label: 'Diaper/burp' });
+      events.push({ startMin: (afterEnd + 10) % 1440, durMin: Math.max(10, gap - f.durMin - 10), type: 'sleep', label: 'Night sleep' });
+    }
+  }
+
+  return { events, actualPumps };
+}
+
+function genResponsive(inputs)  { return genSchedule(inputs, 'centered'); }
+function genClock(inputs)       { return genSchedule(inputs, 'clock'); }
+function genClusterDream(inputs){ return genSchedule(inputs, 'bookended'); }
+
+// Build the feed roster — an array of length `feeds` describing each feed event:
+// { kind: 'nurse'|'bm-bottle'|'formula', label, isFormula, isRemoval }
+// "isRemoval" means this feed counts as milk removal from the breast (nursing only).
+// Pumps are tracked separately (they're also removals but not feeds).
+function buildFeedRoster(feeds, plan, formulaPct) {
+  const numFormula = Math.round(feeds * formulaPct);
+  const roster = new Array(feeds).fill(null);
+
+  // 1) Place formula feeds evenly
+  if (numFormula >= feeds) {
+    for (let i = 0; i < feeds; i++) {
+      roster[i] = { kind: 'formula', label: 'Formula bottle', isFormula: true, isRemoval: false };
+    }
+    return roster;
+  }
+  if (numFormula > 0) {
+    const step = feeds / numFormula;
+    for (let k = 0; k < numFormula; k++) {
+      const idx = Math.round(k * step);
+      if (idx < feeds && roster[idx] === null) {
+        roster[idx] = { kind: 'formula', label: 'Formula bottle', isFormula: true, isRemoval: false };
+      }
+    }
+  }
+
+  // 2) Among the remaining (BM) slots, distribute nursings vs BM bottles evenly
+  const bmSlots = [];
+  for (let i = 0; i < feeds; i++) if (roster[i] === null) bmSlots.push(i);
+  const numNurse = Math.min(plan.nursings, bmSlots.length);
+
+  if (numNurse >= bmSlots.length) {
+    bmSlots.forEach(i => {
+      roster[i] = { kind: 'nurse', label: 'Nurse', isFormula: false, isRemoval: true };
+    });
+  } else if (numNurse === 0) {
+    bmSlots.forEach(i => {
+      roster[i] = { kind: 'bm-bottle', label: 'BM bottle (pumped)', isFormula: false, isRemoval: false };
+    });
+  } else {
+    const nurseSet = new Set();
+    const step = bmSlots.length / numNurse;
+    for (let k = 0; k < numNurse; k++) nurseSet.add(Math.round(k * step));
+    bmSlots.forEach((slotIdx, k) => {
+      if (nurseSet.has(k)) {
+        roster[slotIdx] = { kind: 'nurse', label: 'Nurse', isFormula: false, isRemoval: true };
+      } else {
+        roster[slotIdx] = { kind: 'bm-bottle', label: 'BM bottle (pumped)', isFormula: false, isRemoval: false };
+      }
+    });
+  }
+
+  return roster;
+}
+
+// Compute awake-window length in minutes (handles wraparound)
+function awakeWindowMin(wakeStartMin, bedtimeMin) {
+  return ((bedtimeMin - wakeStartMin) + 1440) % 1440;
+}
+
+// Place pumps INTELLIGENTLY around existing feed/nursing events.
+// Constraint: pumps must be ≥60 min from any nursing (since both empty the breast).
+// Pumps may overlap with bottle feeds — those don't empty the breast.
+// If skipMOTN, pumps only go in the awake window.
+// Returns { events, actualCount, minSpacingMin }
+function placePumps(targetCount, wakeStartMin, bedtimeMin, skipMOTN, existingEvents) {
+  if (targetCount === 0) return { events: [], actualCount: 0, minSpacingMin: null };
+  const MIN_GAP_FROM_NURSING = 60;
+  const MIN_SPACING = 90;
+
+  // Awake window in [windowStart, windowEnd], unwrapped (windowEnd may exceed 1440)
+  let windowStart = wakeStartMin;
+  let windowEnd = skipMOTN ? bedtimeMin : wakeStartMin + 1440;
+  if (windowEnd <= windowStart) windowEnd += 1440;
+
+  // Extract nursing times (the only feed type that empties the breast)
+  const nursingTimes = (existingEvents || [])
+    .filter(e => e.type === 'feed' && e.isRemoval)
+    .map(e => {
+      let t = e.startMin;
+      while (t < windowStart) t += 1440;
+      return t;
+    })
+    .sort((a, b) => a - b);
+
+  // No nursings (exclusive pumping or bottle-only): distribute uniformly in window
+  if (nursingTimes.length === 0) {
+    const dur = windowEnd - windowStart;
+    const maxFit = Math.floor(dur / MIN_SPACING) + 1;
+    const actual = Math.min(targetCount, maxFit);
+    const spacing = dur / actual;
+    const events = [];
+    for (let i = 0; i < actual; i++) {
+      events.push({
+        startMin: (windowStart + i * spacing + spacing / 2) % 1440,
+        durMin: 20, type: 'pump', label: 'Pump'
+      });
+    }
+    return { events, actualCount: actual, minSpacingMin: Math.round(spacing) };
+  }
+
+  // Build candidate gaps between consecutive nursings (treating the day as a ring)
+  const gaps = [];
+  for (let i = 0; i < nursingTimes.length; i++) {
+    const curr = nursingTimes[i];
+    const nextRaw = i + 1 < nursingTimes.length ? nursingTimes[i + 1] : nursingTimes[0] + 1440;
+    const gapStart = curr + MIN_GAP_FROM_NURSING;
+    const gapEnd = nextRaw - MIN_GAP_FROM_NURSING;
+    if (gapEnd <= gapStart) continue;
+
+    // Clip to valid window (handle wraparound by checking both [windowStart, windowEnd] and shifted)
+    const candidates = [
+      { s: gapStart, e: gapEnd },
+      { s: gapStart - 1440, e: gapEnd - 1440 },
+      { s: gapStart + 1440, e: gapEnd + 1440 }
+    ];
+    for (const cand of candidates) {
+      const clipStart = Math.max(cand.s, windowStart);
+      const clipEnd = Math.min(cand.e, windowEnd);
+      if (clipEnd > clipStart) {
+        gaps.push({ start: clipStart, end: clipEnd, size: clipEnd - clipStart });
+      }
+    }
+  }
+
+  // Capacity per gap: how many pumps fit with MIN_SPACING
+  // A gap of size S fits floor(S/MIN_SPACING) + 1 pumps, but only if S >= 0
+  const capacity = gaps.map(g => Math.max(0, Math.floor(g.size / MIN_SPACING) + 1));
+  const totalCapacity = capacity.reduce((a, b) => a + b, 0);
+  let toPlace = Math.min(targetCount, totalCapacity);
+
+  // Greedily allocate pumps to gaps: prefer gaps with the most remaining "room per pump"
+  const allocated = new Array(gaps.length).fill(0);
+  while (toPlace > 0) {
+    let bestIdx = -1;
+    let bestRoom = -Infinity;
+    for (let i = 0; i < gaps.length; i++) {
+      if (allocated[i] >= capacity[i]) continue;
+      // room per pump after adding one more
+      const room = gaps[i].size / (allocated[i] + 1);
+      if (room > bestRoom) {
+        bestRoom = room;
+        bestIdx = i;
+      }
+    }
+    if (bestIdx === -1) break;
+    allocated[bestIdx]++;
+    toPlace--;
+  }
+
+  // Place pumps evenly within each gap
+  const events = [];
+  for (let i = 0; i < gaps.length; i++) {
+    const n = allocated[i];
+    if (n === 0) continue;
+    const g = gaps[i];
+    const spacing = g.size / n;
+    for (let k = 0; k < n; k++) {
+      const t = (g.start + k * spacing + spacing / 2) % 1440;
+      events.push({ startMin: t, durMin: 20, type: 'pump', label: 'Pump' });
+    }
+  }
+
+  return { events, actualCount: events.length, minSpacingMin: MIN_SPACING };
+}
+
+// =====================================================================
+// SUPPLY-IMPACT WARNING
+// =====================================================================
+// Returns { level: 'blocker'|'strong'|'moderate'|'info'|null, title, html }
+function supplyWarning({ ageDays, pumpGoal, skipMOTN, targetPumps, actualPumps, minSpacing, overnightGapMin, dailyTargetMl }) {
+  if (pumpGoal === 'none') return null;
+  // If there are no pumps planned, the MOTN-skip choice is moot.
+  // (E.g., 100% BM direct nurse — all removals are nursings, baby wakes at night to feed.)
+  if (targetPumps === 0) return null;
+
+  // 1. BLOCKER — pumps requested don't fit in awake window
+  if (skipMOTN && actualPumps < targetPumps) {
+    const lostPumps = targetPumps - actualPumps;
+    // Estimate output shortfall: each missed pump ≈ 80-100 mL at peak supply
+    const shortfallMl = lostPumps * 90;
+    const targetOz = (dailyTargetMl / 29.5735).toFixed(1);
+    const shortfallOz = (shortfallMl / 29.5735).toFixed(1);
+    return {
+      level: 'blocker',
+      title: "Can't fit your pump goal in the awake window",
+      html: `
+        <p>Your <strong>${pumpGoal === 'exclusive' ? 'exclusive pumping' : 'establish-supply'}</strong> goal needs about <strong>${targetPumps} pumps/day</strong>, but with your sleep window only <strong>${actualPumps}</strong> fit in your awake hours at the minimum useful spacing (90 min between pumps).</p>
+        <p>Expected daily output if you proceed as-is: <strong>~${shortfallOz} oz below</strong> the ${targetOz} oz/day target.</p>
+        <p>Three ways to close the gap:</p>
+        <ul>
+          <li>Add one MOTN pump (a single 3am session is the highest-leverage change).</li>
+          <li>Shift wake earlier or bedtime later to widen your awake window.</li>
+          <li>Accept a lower daily target — common after week 6 once supply is established.</li>
+        </ul>
+      `
+    };
+  }
+
+  // 2. STRONG — first 2 weeks + establish/exclusive goal + skip MOTN + long overnight gap
+  if (skipMOTN && ageDays < 14 && (pumpGoal === 'establish' || pumpGoal === 'exclusive') && overnightGapMin >= 240) {
+    return {
+      level: 'strong',
+      title: 'Skipping MOTN in the first 2 weeks may cap your long-term supply',
+      html: `
+        <p>Prolactin (the milk-making hormone) peaks at night, and the first 10–14 days are when your body calibrates how much milk to make long-term — including for the months after. Going <strong>${(overnightGapMin/60).toFixed(1)} hours</strong> without milk removal at this stage tells your body to produce <em>less</em> overall, and that ceiling is hard to raise later (Mohrbacher 2020; Kent 2008).</p>
+        <p><strong>The honest recommendation</strong>: keep at least one MOTN pump or feed until ~week 3–4, then re-evaluate. Even if your goal is "just enough," skipping nights this early can leave you with "less than enough" by week 6. Many parents do a single 2–4am pump and consider it the price of admission for the first month.</p>
+      `
+    };
+  }
+
+  // 3. MODERATE — 2-12 weeks + establish/exclusive + skip MOTN + 6+ hour gap
+  //    AND meaningful pump demand (≥5 pumps). Low-demand combo feeders are gated out:
+  //    their breast doesn't fill fast enough for FIL to matter much at 6-9h gaps.
+  if (skipMOTN && ageDays >= 14 && ageDays < 84 && (pumpGoal === 'establish' || pumpGoal === 'exclusive') && overnightGapMin >= 360 && targetPumps >= 5) {
+    const reductionLo = 10, reductionHi = 20;
+    return {
+      level: 'moderate',
+      title: 'Long overnight gap may reduce your daily output ~10–20%',
+      html: `
+        <p>A <strong>${(overnightGapMin/60).toFixed(1)}-hour</strong> gap without milk removal is past the threshold where the breast's feedback inhibitor of lactation (FIL) starts down-regulating production (Kent 2008). In observational data, parents who skip MOTN pumps in the first 12 weeks tend to produce <strong>~${reductionLo}–${reductionHi}% less per day</strong> than those who don't.</p>
+        <p>If you're aiming to match Alessi's needs (~26 oz/day at this age), you may fall a bit short. If your goal is "enough, while preserving sleep," this trade-off is reasonable — many parents make it. Supply tends to stabilize by 4–6 weeks; after that the trade-off shrinks.</p>
+      `
+    };
+  }
+
+  // 4. INFO — skipping MOTN after 12 weeks, or maintenance goal
+  if (skipMOTN && (ageDays >= 84 || pumpGoal === 'maintenance')) {
+    return {
+      level: 'info',
+      title: 'This setup is generally safe for supply',
+      html: `
+        <p>After ~12 weeks (or with a maintenance pumping goal at any age), supply is regulated and far less sensitive to overnight gaps. Most parents drop MOTN pumps here without measurable output loss.</p>
+      `
+    };
+  }
+
+  return null;
+}
+
+function renderAlert(warning) {
+  const el = document.getElementById('supply-alert');
+  if (!warning) {
+    el.className = 'alert';
+    el.innerHTML = '';
+    return;
+  }
+  el.className = 'alert visible ' + warning.level;
+  const badgeChar = warning.level === 'blocker' ? '!' : warning.level === 'info' ? 'i' : '!';
+  el.innerHTML = `
+    <div class="head"><span class="badge">${badgeChar}</span>${warning.title}</div>
+    ${warning.html}
+  `;
+}
+
+// =====================================================================
+// RENDER
+// =====================================================================
+function renderTimeline(events, sleepBand) {
+  // Vertical strip: hours run top to bottom (0 → 1440 min).
+  const sorted = [...events].sort((a,b) => a.startMin - b.startMin);
+  const blocks = sorted.map(e => {
+    const topPct = (e.startMin / 1440) * 100;
+    const heightPct = (e.durMin / 1440) * 100;
+    return `<div class="block ${e.type}" style="top:${topPct}%;height:${heightPct}%" title="${e.label} at ${fmtTime(e.startMin)}"></div>`;
+  }).join('');
+  let band = '';
+  if (sleepBand) {
+    const { startMin, endMin } = sleepBand;
+    if (startMin < endMin) {
+      const topPct = (startMin / 1440) * 100;
+      const heightPct = ((endMin - startMin) / 1440) * 100;
+      band = `<div class="sleep-band" style="top:${topPct}%;height:${heightPct}%" title="Your sleep window"></div>`;
+    } else {
+      const h1 = ((1440 - startMin) / 1440) * 100;
+      const h2 = (endMin / 1440) * 100;
+      band = `<div class="sleep-band" style="top:${(startMin/1440)*100}%;height:${h1}%"></div>
+              <div class="sleep-band" style="top:0;height:${h2}%"></div>`;
+    }
+  }
+  // Hour ticks every 3h (running down the left axis)
+  let ticks = '';
+  for (let h = 0; h <= 24; h += 3) {
+    const label = h === 0 || h === 24 ? '12am' : (h < 12 ? h + 'am' : (h === 12 ? '12pm' : (h-12) + 'pm'));
+    ticks += `<span class="tick" style="top:${(h/24)*100}%">${label}</span>`;
+  }
+  return { timeline: `<div class="timeline">${band}${blocks}</div>`, axis: `<div class="hours-axis">${ticks}</div>` };
+}
+
+// SVG icon library. Single-stroke lucide-style. Color is inherited via CSS variable.
+const ICON_PATHS = {
+  heart:   '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>',
+  droplet: '<path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>',
+  bottle:  '<path d="M10 2h4v2h-4z"/><path d="M9 4h6v3.5c0 .8.3 1.6.7 2.3L17 22H7l1.3-12.2c.4-.7.7-1.5.7-2.3V4z"/><line x1="9" y1="11" x2="15" y2="11"/>',
+  sun:     '<circle cx="12" cy="12" r="4"/><line x1="12" y1="3" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="21"/><line x1="5" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="19" y2="12"/><line x1="5.6" y1="5.6" x2="7" y2="7"/><line x1="17" y1="17" x2="18.4" y2="18.4"/><line x1="5.6" y1="18.4" x2="7" y2="17"/><line x1="17" y1="7" x2="18.4" y2="5.6"/>',
+  moon:    '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
+  scale:   '<path d="M3 6h18"/><path d="M16 6c-1.4 0-2.5-1-2.5-2.5"/><circle cx="12" cy="14" r="4"/><line x1="8" y1="14" x2="3" y2="14"/><line x1="21" y1="14" x2="16" y2="14"/>',
+  clock:   '<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/>',
+  chart:   '<path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-5"/>'
+};
+function iconSvg(kind, color) {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="${color || 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON_PATHS[kind] || ''}</svg>`;
+}
+function eventIcon(e) {
+  if (e.type === 'feed' && e.isRemoval) return iconSvg('heart', 'var(--removal-red)');
+  if (e.type === 'pump')                return iconSvg('droplet', 'var(--pump)');
+  if (e.type === 'feed' && e.isFormula) return iconSvg('bottle', '#B89968');
+  if (e.type === 'feed')                return iconSvg('bottle', 'var(--feed)');
+  if (e.type === 'play')                return iconSvg('sun', 'var(--play)');
+  if (e.type === 'sleep')               return iconSvg('moon', 'var(--sleep)');
+  return '';
+}
+
+function renderEventList(events, mlPerFeed, plan) {
+  // Show all events vertically. Feeds and pumps are emphasized; play/sleep are subdued context.
+  const sorted = [...events].sort((a,b) => a.startMin - b.startMin);
+  return sorted.map(e => {
+    let vol = '';
+    if (e.type === 'feed' && e.ml) {
+      const tag = e.isFormula ? 'formula' : 'BM';
+      vol = `<span class="vol">${fmtOz(e.ml)} ${tag}</span>`;
+    } else if (e.type === 'pump') {
+      vol = `<span class="vol">~20 min</span>`;
+    }
+    const rowClass = (e.type === 'feed' && e.isRemoval) ? 'feed nurse' : e.type;
+    return `<div class="ev ${rowClass}">
+      <span class="time">${fmtTime(e.startMin)}</span>
+      <span class="icon">${eventIcon(e)}</span>
+      <span class="label">${e.label}</span>
+      ${vol}
+    </div>`;
+  }).join('');
+}
+
+function renderTotals(events) {
+  const totals = { feed: 0, pump: 0, play: 0, sleep: 0 };
+  events.forEach(e => totals[e.type] += e.durMin);
+  const feedCount = events.filter(e => e.type === 'feed').length;
+  const pumpCount = events.filter(e => e.type === 'pump').length;
+  const feedMl = events.filter(e => e.type === 'feed').reduce((s,e) => s + (e.ml || 0), 0);
+  return `
+    <div><strong>${feedCount}</strong> feeds${pumpCount ? ` · <strong>${pumpCount}</strong> pumps` : ''}</div>
+    <div><strong>${fmtOz(feedMl)}</strong> milk total</div>
+    <div><strong>${(totals.sleep/60).toFixed(1)}h</strong> sleep</div>
+    <div><strong>${(totals.play/60).toFixed(1)}h</strong> awake</div>
+  `;
+}
+
+function renderSchedule(name, philosophy, events, mlPerFeed, sleepBand, plan) {
+  const { timeline, axis } = renderTimeline(events, sleepBand);
+  return `
+    <div class="schedule-card">
+      <h3>${name}</h3>
+      <p class="philosophy">${philosophy}</p>
+      <div class="schedule-body">
+        ${timeline}
+        ${axis}
+        <div class="schedule-events">${renderEventList(events, mlPerFeed, plan)}</div>
+      </div>
+      <div class="totals">${renderTotals(events)}</div>
+    </div>
+  `;
+}
+
+// =====================================================================
+// MAIN UPDATE
+// =====================================================================
+function update() {
+  const birthISO = document.getElementById('birthdate').value || '2026-04-15';
+  const waketime = document.getElementById('waketime').value || '09:30';
+  const bedtime = document.getElementById('bedtime').value || '00:30';
+  const bmpct = parseInt(document.getElementById('bmpct').value, 10);
+  const method = document.querySelector('#method-seg button.active').dataset.val;
+  const pumpGoal = document.querySelector('#pump-seg button.active').dataset.val;
+  const motnChoice = document.querySelector('#motn-seg button.active').dataset.val;
+  const skipMOTN = motnChoice === 'skip';
+
+  const days = ageInDays(birthISO);
+  document.getElementById('age-readout').textContent = ageReadable(days);
+
+  // Sleep readout
+  const [wh, wm] = waketime.split(':').map(Number);
+  const [bh, bm] = bedtime.split(':').map(Number);
+  const wakeStartMin = wh * 60 + wm;
+  const bedtimeMin = bh * 60 + bm;
+  const overnightGapMin = ((wakeStartMin - bedtimeMin) + 1440) % 1440;
+  document.getElementById('sleep-readout').textContent =
+    `Awake ${((bedtimeMin - wakeStartMin + 1440) % 1440 / 60).toFixed(1)}h · sleep window ${(overnightGapMin/60).toFixed(1)}h`;
+
+  document.getElementById('bmpct-readout').textContent =
+    `${bmpct}% breastmilk · ${100 - bmpct}% formula`;
+
+  // Pump hint
+  const pumpHints = {
+    none: 'No pumping sessions in the schedule.',
+    maintenance: '2–3 pumps/day to preserve an already-stable supply alongside nursing.',
+    establish: 'Frequent removal in the first 4–6 weeks calibrates your body to make enough milk for the baby — no stockpile aim. ~8 pumps/day early, tapering to 5–6 as supply regulates.',
+    exclusive: 'All feeds come from pumped milk. 8–10 pumps/day in the first weeks; can drop to 6–8 once supply is established (~4–6 weeks).'
+  };
+  document.getElementById('pump-hint').textContent = pumpHints[pumpGoal];
+
+  // Calculations
+  const formulaPct = (100 - bmpct) / 100;
+  const dailyBm = dailyBreastmilkMl(days) * (bmpct / 100);
+  const dailyFf = dailyFormulaMl(days) * formulaPct;
+  const dailyTotal = dailyBm + dailyFf;
+  const feeds = feedsPerDay(days, formulaPct);
+  const mlPerFeed = Math.round(dailyTotal / feeds);
+  const sleep = totalSleepHours(days);
+  const ww = wakeWindowMin(days);
+  const plan = removalPlan(pumpGoal, days, method, formulaPct, feeds);
+  const pumpsCount = plan.pumps;
+  const roster = buildFeedRoster(feeds, plan, formulaPct);
+
+  // Summary cards
+  const summary = document.getElementById('summary');
+  summary.innerHTML = `
+    <div class="stat">
+      <div class="lbl">Daily milk target</div>
+      <div class="val">${fmtOz(dailyTotal)}</div>
+      <div class="sub">${bmpct > 0 ? fmtOz(dailyBm) + ' BM' : ''}${bmpct > 0 && formulaPct > 0 ? ' + ' : ''}${formulaPct > 0 ? fmtOz(dailyFf) + ' formula' : ''}</div>
+      <span class="evidence ev-strong">Kent 2006 · AAP</span>
+    </div>
+    <div class="stat">
+      <div class="lbl">Feeds per 24h</div>
+      <div class="val">${feeds}</div>
+      <div class="sub">${fmtOz(mlPerFeed)} per feed avg</div>
+      <span class="evidence ev-strong">AAP 2022</span>
+    </div>
+    <div class="stat">
+      <div class="lbl">Daily sleep</div>
+      <div class="val">${sleep.toFixed(1)}h</div>
+      <div class="sub">14–17h normal range</div>
+      <span class="evidence ev-strong">NSF · Iglowstein 2003</span>
+    </div>
+    <div class="stat">
+      <div class="lbl">Wake window</div>
+      <div class="val">${ww} min</div>
+      <div class="sub">Between sleeps</div>
+      <span class="evidence ev-low">Practitioner</span>
+    </div>
+  `;
+
+  // Production callout — the answer to "how much do I need to produce"
+  const production = document.getElementById('production');
+  if (bmpct === 0) {
+    production.innerHTML = `
+      <h3>Your daily breastmilk plan</h3>
+      <p>You're set to 100% formula, so no breastmilk production is needed.</p>
+    `;
+  } else {
+    const removalsCovered = plan.nursings + plan.pumps;
+    const removalNote = pumpGoal === 'establish' && days < 14 && removalsCovered > plan.bmFeeds
+      ? `(Extra removals beyond ${plan.bmFeeds} BM feeds because you're in the first 2 weeks — the goal is calibrating your supply, not just volume.)`
+      : '';
+    production.innerHTML = `
+      <h3>Your daily breastmilk plan</h3>
+      <div class="row">
+        <div class="metric">
+          <div class="lbl">Breastmilk to produce</div>
+          <div class="val">${fmtOz(dailyBm)}</div>
+          <div class="sub">${fmtMl(dailyBm)} · across ${removalsCovered} removal${removalsCovered === 1 ? '' : 's'}</div>
+        </div>
+        <div class="metric">
+          <div class="lbl">How you'll remove it</div>
+          <div class="val">${plan.nursings} nursing${plan.nursings === 1 ? '' : 's'} + ${plan.pumps} pump${plan.pumps === 1 ? '' : 's'}</div>
+          <div class="sub">Each direct nursing counts as one removal</div>
+        </div>
+      </div>
+      <p>${plan.nursings > 0 && plan.pumps > 0
+        ? `Nursing and pumping both empty the breast and signal "make more." With ${plan.nursings} nursings already covered, you only need ${plan.pumps} extra pump${plan.pumps === 1 ? '' : 's'}.`
+        : plan.pumps === 0
+          ? `All removals happen at the breast — no pumping needed for this setup.`
+          : `All removals happen via pump (bottle-only or exclusive pumping).`}
+        ${removalNote}</p>
+      ${(skipMOTN && plan.pumps === 0 && (feeds - plan.nursings) === 0)
+        ? `<p style="color:#7A4F2C;background:#F4E4D6;border-radius:6px;padding:8px 12px;margin-top:10px;font-size:12px;"><strong>Heads up:</strong> You chose to skip MOTN, but with 100% direct nursing there's nothing else to feed the baby at night. The schedule places nursings across 24h. To truly skip MOTN you'd need either pumped bottles (add some pumps to the schedule) or some formula.</p>`
+        : ''}
+    `;
+  }
+
+  // Schedule inputs — pass the target pump count; generators place them around nursings
+  const sched = { feeds, wakeStartMin, bedtimeMin, skipMOTN, mlPerFeed, formulaPct, method, pumpsCount, ww, roster, plan };
+  const sleepBand = { startMin: bedtimeMin, endMin: wakeStartMin };
+
+  const a = genResponsive(sched);
+  const b = genClock(sched);
+  const c = genClusterDream(sched);
+
+  // Use the worst-case (minimum) placement across schedules for the supply warning
+  const actualPumps = Math.min(a.actualPumps, b.actualPumps, c.actualPumps);
+
+  const warning = supplyWarning({
+    ageDays: days,
+    pumpGoal,
+    skipMOTN,
+    targetPumps: pumpsCount,
+    actualPumps,
+    minSpacing: null,
+    overnightGapMin,
+    dailyTargetMl: dailyTotal
+  });
+  renderAlert(warning);
+
+  // Spacing for the user's actual scenario
+  const awakeH = ((bedtimeMin - wakeStartMin + 1440) % 1440) / 60;
+  const removalSpacingH = plan.totalRemovals > 0 ? (awakeH / plan.totalRemovals).toFixed(1) : '–';
+
+  const responsivePhilosophy = `<strong>Centered.</strong> All ${plan.totalRemovals} removals (${plan.nursings} nurse + ${plan.pumps} pump) spaced evenly across your ${awakeH.toFixed(1)}h awake window — roughly every ${removalSpacingH}h. Bottles fill gaps for baby's night feeds. <em>Most balanced; best default.</em>`;
+  const clockPhilosophy = `<strong>Clock-friendly.</strong> Same even-spacing principle, but removal times are snapped to round 15-min marks so it's easier to remember and track. Spacing is slightly less mathematically uniform as a result. <em>Use if you like memorable times like 9:00 and 11:30.</em>`;
+  const clusterPhilosophy = `<strong>Bookended (wake + bedtime).</strong> First removal right at wake, last right before bedtime — covering the long overnight stretch on both ends. Slightly tighter spacing during the day. <em>Useful if you want a "dream feed" feel at bedtime.</em>`;
+
+  document.getElementById('schedules').innerHTML =
+    renderSchedule('1. Even spacing (centered)', responsivePhilosophy, a.events, mlPerFeed, sleepBand, plan) +
+    renderSchedule('2. Clock-friendly', clockPhilosophy, b.events, mlPerFeed, sleepBand, plan) +
+    renderSchedule('3. Bookended', clusterPhilosophy, c.events, mlPerFeed, sleepBand, plan);
+}
+
+// =====================================================================
+// EVENT WIRING
+// =====================================================================
+function initSeg(selector) {
+  document.querySelectorAll(selector + ' button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll(selector + ' button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      update();
+    });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Build the legend once
+  const legend = document.getElementById('legend');
+  if (legend) {
+    legend.innerHTML = [
+      ['Nurse',          iconSvg('heart',   'var(--removal-red)')],
+      ['Pump',           iconSvg('droplet', 'var(--pump)')],
+      ['BM bottle',      iconSvg('bottle',  'var(--feed)')],
+      ['Formula bottle', iconSvg('bottle',  '#B89968')],
+      ['Awake / play',   iconSvg('sun',     'var(--play)')],
+      ['Sleep',          iconSvg('moon',    'var(--sleep)')]
+    ].map(([label, svg]) => `<span><span class="legend-icon">${svg}</span> ${label}</span>`).join('');
+  }
+
+  // Build the explanation section once
+  const explain = document.getElementById('explanation');
+  if (explain) {
+    const ico = (kind, color) => `<span class="icon">${iconSvg(kind, color)}</span>`;
+    explain.innerHTML = `
+      <h2>How these numbers are calculated</h2>
+      <p class="intro">A plain-English walkthrough of each number on this page and why it's where it is. Every claim here is also cited in the sources panel below.</p>
+
+      <div class="explain-item">
+        <h3>${ico('chart', 'var(--feed)')} Daily milk target</h3>
+        <p>From <strong>Kent et al. (2006)</strong>, a study that measured 71 exclusively breastfed babies in the first 6 months: average daily intake plateaus around <strong>26 oz (788 mL) per day</strong> by about 2 weeks of age — and stays remarkably steady through 6 months. Formula-fed babies drink slightly more (peaking around 30 oz/day) because formula is digested more slowly. When you're combo feeding, your daily target is the weighted sum of both — for example, 50% breastmilk × 26 oz + 50% formula × 29 oz ≈ 27.5 oz total.</p>
+      </div>
+
+      <div class="explain-item">
+        <h3>${ico('bottle', 'var(--feed)')} Feeds per 24 hours</h3>
+        <p>The <strong>American Academy of Pediatrics</strong> recommends 8–12 feeds/day for breastfed newborns. Formula-fed babies typically eat 6–8 times because formula keeps them full longer. The tool blends these by your combo split, so a 50/50 setup lands around 8 feeds/day.</p>
+      </div>
+
+      <div class="explain-item">
+        <h3>${ico('moon', 'var(--sleep)')} Daily sleep and wake windows</h3>
+        <p>The <strong>National Sleep Foundation</strong> range for newborns is 14–17 hours/day (Hirshkowitz 2015). The <strong>Iglowstein 2003</strong> reference dataset — the largest infant-sleep study we have — puts the actual average at about 15 hours at 1 month, drifting down to 14 by 3 months.</p>
+        <p>"Wake windows" — how long the baby stays awake between sleeps — are widely taught by pediatric sleep practitioners (30–90 min in the first 3 months), but the empirical literature here is thin. Treat them as a soft signal, not a rule. The tool labels them <em>"Practitioner consensus"</em> in the summary panel to be honest about that.</p>
+      </div>
+
+      <div class="explain-item">
+        <h3>${ico('heart', 'var(--removal-red)')} Removal plan: nursings + pumps</h3>
+        <p>A <strong>"removal"</strong> is anything that empties milk from the breast — a nursing or a pump. Both signal your body to make more milk. The total number depends on your goal:</p>
+        <ul>
+          <li><strong>None</strong> — every BM feed is at the breast; no extra pumps.</li>
+          <li><strong>Maintenance</strong> — 2–3 pumps/day to preserve an already-stable supply during stretches away from the baby.</li>
+          <li><strong>Establish supply</strong> — in the first 2 weeks, aim for about 8 removals/day to calibrate your body's long-term production level. Nursings count toward that total, so if you nurse 4 times you only need ~4 additional pumps. After 2 weeks, your body has set its ceiling and you only need removals to match your daily BM feeds.</li>
+          <li><strong>Exclusive pumping</strong> — one pump per BM feed, with extra frequency in the first 2 weeks for prolactin signaling.</li>
+        </ul>
+        <p>This is the answer to "do nursings count as pumps?" — yes, they do, and the math reflects that.</p>
+      </div>
+
+      <div class="explain-item">
+        <h3>${ico('clock', 'var(--pump)')} How removals are placed in the day</h3>
+        <p>All removals (nursings + pumps) are placed <strong>evenly</strong> within the same time window so the breast stays at a consistent fill level. Two physiological rules drive the spacing:</p>
+        <ul>
+          <li>Pumps need at least <strong>90 minutes</strong> between sessions; closer than that yields little additional milk.</li>
+          <li>Pumps stay at least <strong>60 minutes</strong> from any nursing — otherwise the breast hasn't refilled enough to make the next removal worthwhile.</li>
+        </ul>
+        <p>When you've chosen "skip middle-of-the-night," all removals — both nursings AND pumps — stay in your awake window. The baby's overnight feeds come from bottles instead (BM or formula). The only exception is if you're 100% direct nursing with no bottles available: in that case the baby has to nurse overnight regardless, and the tool flags this with a small note.</p>
+      </div>
+
+      <div class="explain-item">
+        <h3>${ico('scale', 'var(--sage)')} Why three schedules?</h3>
+        <p>All three follow the same even-spacing principle. They differ only in <em>where</em> the removals anchor within your awake window:</p>
+        <ul>
+          <li><strong>Centered</strong> — equal buffer from your wake time and bedtime. The most balanced default.</li>
+          <li><strong>Clock-friendly</strong> — same approach, but times snapped to round 15-minute marks (9:00, 11:30, …) so they're easier to remember and track.</li>
+          <li><strong>Bookended</strong> — first removal right at wake, last right before bed. Useful if you want a "dream feed" feel at bedtime and a nursing first thing in the morning.</li>
+        </ul>
+      </div>
+
+      <div class="explain-item">
+        <h3>${ico('sun', 'var(--play)')} An honest framing</h3>
+        <p>Newborns don't actually follow schedules — they follow hunger and sleep pressure. The strongest evidence supports <strong>responsive (cue-based) feeding</strong> in the first months, not rigid clock-based schedules (AAP 2022). These schedules are a loose frame for your day, not a prescription. The most useful number on this page is the daily milk target; the times around it are just one plausible way to distribute the milk.</p>
+      </div>
+    `;
+  }
+  // Default birth date: Alessi's
+  document.getElementById('birthdate').value = '2026-04-15';
+  document.getElementById('birthdate').addEventListener('change', update);
+  document.getElementById('waketime').addEventListener('change', update);
+  document.getElementById('bedtime').addEventListener('change', update);
+  document.getElementById('bmpct').addEventListener('input', update);
+  initSeg('#method-seg');
+  initSeg('#pump-seg');
+  initSeg('#motn-seg');
+  update();
+});
+</script>
+</body>
+</html>
