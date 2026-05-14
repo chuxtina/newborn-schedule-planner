@@ -39,6 +39,9 @@
     line-height: 1.55;
   }
   .page { max-width: 1100px; margin: 0 auto; padding: 48px 24px 80px; }
+  @media (max-width: 700px) {
+    .page { padding: 32px 20px 110px; }
+  }
   header.hero { margin-bottom: 36px; }
   .eyebrow {
     text-transform: uppercase;
@@ -598,6 +601,149 @@
     color: var(--ink-faint);
     text-align: center;
   }
+
+  /* ----- Side rail (info menu) ----- */
+  .side-rail {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    z-index: 50;
+  }
+  .rail-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 16px 10px 14px;
+    background: var(--sage-dark);
+    border: 1px solid var(--sage-dark);
+    border-radius: 999px;
+    color: #FFFFFF;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
+    box-shadow: 0 6px 16px rgba(79, 107, 83, 0.22), 0 1px 2px rgba(0,0,0,0.06);
+    white-space: nowrap;
+  }
+  .rail-btn:hover,
+  .rail-btn:focus-visible {
+    background: #3F5743;
+    border-color: #3F5743;
+    box-shadow: 0 8px 20px rgba(79, 107, 83, 0.32), 0 1px 2px rgba(0,0,0,0.08);
+    outline: none;
+    transform: translateY(-1px);
+  }
+  .rail-btn:active {
+    transform: translateY(0);
+  }
+  .rail-btn svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    display: block;
+  }
+  .rail-btn .rail-label {
+    display: inline-block;
+  }
+  .rail-btn.active {
+    background: var(--ink);
+    border-color: var(--ink);
+  }
+
+  /* ----- Overlay backdrop + panels ----- */
+  .overlay-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(31, 36, 33, 0.42);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    z-index: 100;
+  }
+  .overlay-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .overlay-panel {
+    position: fixed;
+    top: 0; bottom: 0; left: 0;
+    width: min(640px, 94vw);
+    background: var(--bg);
+    border-right: 1px solid var(--border-strong);
+    box-shadow: 4px 0 28px rgba(0,0,0,0.14);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 110;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    display: flex;
+    flex-direction: column;
+  }
+  .overlay-panel.open {
+    transform: translateX(0);
+  }
+  .overlay-toolbar {
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    padding: 14px 18px 8px;
+    display: flex;
+    justify-content: flex-end;
+    z-index: 2;
+  }
+  .overlay-close {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border-strong);
+    border-radius: 50%;
+    background: var(--card);
+    color: var(--ink-soft);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .overlay-close:hover {
+    color: var(--ink);
+    border-color: var(--ink-soft);
+  }
+  .overlay-body {
+    padding: 0 28px 56px;
+  }
+  .overlay-body .explanation,
+  .overlay-body .sources {
+    margin-top: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    padding: 4px 0 16px;
+  }
+  body.overlay-open {
+    overflow: hidden;
+  }
+
+  @media (max-width: 700px) {
+    .side-rail {
+      top: auto;
+      right: auto;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .overlay-body {
+      padding: 0 20px 56px;
+    }
+  }
 </style>
 </head>
 <body>
@@ -606,7 +752,7 @@
 <header class="hero">
   <div class="eyebrow">Research-backed planner · 0–3 months</div>
   <h1>Newborn schedule planner</h1>
-  <p class="lede">Adjust your priorities below and the planner generates three sample 24-hour schedules. Every milk-volume and sleep number on this page is cited in the sources panel at the bottom — and where the evidence is thin, it's labeled honestly.</p>
+  <p class="lede">Adjust your priorities below and the planner generates three sample 24-hour schedules. Every milk-volume and sleep number on this page is cited in the sources panel — open it from the side menu — and where the evidence is thin, it's labeled honestly.</p>
 </header>
 
 <div class="layout">
@@ -634,9 +780,9 @@
 
     <div class="field">
       <label for="bmpct">Breastmilk vs. formula split</label>
-      <input type="range" id="bmpct" min="0" max="100" step="5" value="100" />
+      <input type="range" id="bmpct" min="0" max="100" step="5" value="50" />
       <div class="slider-wrap"><span>0% BM</span><span>100% BM</span></div>
-      <div class="slider-value" id="bmpct-readout">100% breastmilk · 0% formula</div>
+      <div class="slider-value" id="bmpct-readout">50% breastmilk · 50% formula</div>
     </div>
 
     <div class="field">
@@ -689,8 +835,55 @@
 
     <div id="schedules"></div>
 
-    <section class="explanation" id="explanation"></section>
+    <footer>Built for Christina · For information, not medical advice. Talk to your pediatrician about Alessi's individual needs.</footer>
+  </main>
+</div>
 
+</div>
+
+<!-- ============ SIDE RAIL ============ -->
+<aside class="side-rail" aria-label="Information menu">
+  <button class="rail-btn" data-overlay="calculations" aria-label="How these numbers are calculated" aria-controls="panel-calculations" aria-expanded="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="5" y="3" width="14" height="18" rx="2"/>
+      <line x1="8" y1="7" x2="16" y2="7"/>
+      <circle cx="9" cy="12" r="0.6"/>
+      <circle cx="12" cy="12" r="0.6"/>
+      <circle cx="15" cy="12" r="0.6"/>
+      <circle cx="9" cy="16" r="0.6"/>
+      <circle cx="12" cy="16" r="0.6"/>
+      <circle cx="15" cy="16" r="0.6"/>
+    </svg>
+    <span class="rail-label">How it's calculated</span>
+  </button>
+  <button class="rail-btn" data-overlay="sources" aria-label="Where these numbers come from" aria-controls="panel-sources" aria-expanded="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 4a2 2 0 0 1 2-2h12v17H7a2 2 0 0 0-2 2V4z"/>
+      <line x1="7" y1="19" x2="19" y2="19"/>
+      <line x1="9" y1="7" x2="15" y2="7"/>
+      <line x1="9" y1="11" x2="15" y2="11"/>
+    </svg>
+    <span class="rail-label">Sources</span>
+  </button>
+</aside>
+
+<!-- ============ OVERLAY PANELS ============ -->
+<div class="overlay-backdrop" id="overlay-backdrop" aria-hidden="true"></div>
+
+<aside class="overlay-panel" id="panel-calculations" aria-hidden="true" role="dialog" aria-modal="true" aria-label="How these numbers are calculated">
+  <div class="overlay-toolbar">
+    <button class="overlay-close" type="button" aria-label="Close" data-overlay-close>&times;</button>
+  </div>
+  <div class="overlay-body">
+    <section class="explanation" id="explanation"></section>
+  </div>
+</aside>
+
+<aside class="overlay-panel" id="panel-sources" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Where these numbers come from">
+  <div class="overlay-toolbar">
+    <button class="overlay-close" type="button" aria-label="Close" data-overlay-close>&times;</button>
+  </div>
+  <div class="overlay-body">
     <section class="sources">
       <h2>Where these numbers come from</h2>
       <p class="intro">Every claim is tied to a primary source or major guideline. Evidence quality is labeled: <span class="evidence ev-strong">Strong</span> = multiple peer-reviewed studies or major-body guideline; <span class="evidence ev-mod">Moderate</span> = single large study or consistent practitioner consensus with some empirical support; <span class="evidence ev-low">Practitioner consensus</span> = widely taught, limited rigorous evidence.</p>
@@ -737,12 +930,8 @@
         </li>
       </ul>
     </section>
-
-    <footer>Built for Christina · For information, not medical advice. Talk to your pediatrician about Alessi's individual needs.</footer>
-  </main>
-</div>
-
-</div>
+  </div>
+</aside>
 
 <script>
 // =====================================================================
@@ -1625,7 +1814,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const ico = (kind, color) => `<span class="icon">${iconSvg(kind, color)}</span>`;
     explain.innerHTML = `
       <h2>How these numbers are calculated</h2>
-      <p class="intro">A plain-English walkthrough of each number on this page and why it's where it is. Every claim here is also cited in the sources panel below.</p>
+      <p class="intro">A plain-English walkthrough of each number on this page and why it's where it is. Every claim here is also cited in the sources panel (open it from the side menu).</p>
 
       <div class="explain-item">
         <h3>${ico('chart', 'var(--feed)')} Daily milk target</h3>
@@ -1690,6 +1879,70 @@ document.addEventListener('DOMContentLoaded', () => {
   initSeg('#method-seg');
   initSeg('#pump-seg');
   initSeg('#motn-seg');
+
+  // ----- Side-rail overlay system -----
+  const overlayBackdrop = document.getElementById('overlay-backdrop');
+  const railBtns = document.querySelectorAll('.rail-btn');
+  const panels = {
+    calculations: document.getElementById('panel-calculations'),
+    sources: document.getElementById('panel-sources')
+  };
+  let lastTrigger = null;
+
+  function openOverlay(name, trigger) {
+    const panel = panels[name];
+    if (!panel) return;
+    Object.entries(panels).forEach(([key, p]) => {
+      const isTarget = key === name;
+      p.classList.toggle('open', isTarget);
+      p.setAttribute('aria-hidden', isTarget ? 'false' : 'true');
+    });
+    railBtns.forEach(b => {
+      const isTarget = b.dataset.overlay === name;
+      b.classList.toggle('active', isTarget);
+      b.setAttribute('aria-expanded', isTarget ? 'true' : 'false');
+    });
+    overlayBackdrop.classList.add('open');
+    overlayBackdrop.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('overlay-open');
+    lastTrigger = trigger || null;
+    const closeBtn = panel.querySelector('.overlay-close');
+    if (closeBtn) closeBtn.focus({ preventScroll: true });
+  }
+
+  function closeOverlay() {
+    let wasOpen = false;
+    Object.values(panels).forEach(p => {
+      if (p.classList.contains('open')) wasOpen = true;
+      p.classList.remove('open');
+      p.setAttribute('aria-hidden', 'true');
+    });
+    railBtns.forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-expanded', 'false');
+    });
+    overlayBackdrop.classList.remove('open');
+    overlayBackdrop.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('overlay-open');
+    if (wasOpen && lastTrigger && typeof lastTrigger.focus === 'function') {
+      lastTrigger.focus({ preventScroll: true });
+    }
+    lastTrigger = null;
+  }
+
+  railBtns.forEach(btn => {
+    btn.addEventListener('click', () => openOverlay(btn.dataset.overlay, btn));
+  });
+  document.querySelectorAll('[data-overlay-close]').forEach(btn => {
+    btn.addEventListener('click', closeOverlay);
+  });
+  overlayBackdrop.addEventListener('click', closeOverlay);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.body.classList.contains('overlay-open')) {
+      closeOverlay();
+    }
+  });
+
   update();
 });
 </script>
