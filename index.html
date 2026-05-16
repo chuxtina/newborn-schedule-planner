@@ -233,8 +233,12 @@
   }
   .sw-feed { background: var(--feed); }
   .sw-pump { background: var(--pump); }
-  .sw-play { background: var(--play); }
   .sw-sleep { background: var(--sleep); }
+  .legend-gap-note {
+    color: var(--ink-faint);
+    font-style: italic;
+    font-size: 11.5px;
+  }
 
   .schedule-card {
     background: var(--card);
@@ -262,10 +266,12 @@
     gap: 12px;
     margin-top: 14px;
   }
+  /* Timeline strip + event list both scale at 1 px per minute (1440 px / 24 h)
+     so each row in the list lines up exactly with its block on the strip. */
   .timeline {
     position: relative;
     width: 44px;
-    height: 720px;
+    height: 1440px;
     background: #F4F0E8;
     border-radius: 6px;
     overflow: visible;
@@ -277,12 +283,11 @@
   }
   .block.feed { background: var(--feed); }
   .block.pump { background: var(--pump); }
-  .block.play { background: var(--play); }
   .block.sleep { background: var(--sleep); }
   .hours-axis {
     position: relative;
     width: 44px;
-    height: 720px;
+    height: 1440px;
     font-size: 11px;
     color: var(--ink-faint);
     font-variant-numeric: tabular-nums;
@@ -294,29 +299,37 @@
     white-space: nowrap;
   }
   .schedule-events {
-    display: flex;
-    flex-direction: column;
+    position: relative;
+    height: 1440px;
+    overflow: hidden; /* safety: keep wrapped-overnight blocks inside the day grid */
     font-size: 13px;
     color: var(--ink-soft);
     min-width: 0;
   }
+  /* Each event row is absolutely positioned: top = minute-of-day, height = duration.
+     Gaps between rows are the implicit awake time, matching the cream gaps on the strip. */
   .schedule-events .ev {
+    position: absolute;
+    left: 0; right: 0;
+    box-sizing: border-box;
     display: grid;
     grid-template-columns: 70px 18px 1fr auto;
-    align-items: center;
+    align-items: start;
     gap: 8px;
-    padding: 7px 0;
-    border-bottom: 1px solid var(--border);
+    padding: 3px 8px;
+    overflow: hidden;
+    border-radius: 4px;
   }
-  .schedule-events .ev:last-child { border-bottom: 0; }
-  .schedule-events .ev.feed { color: var(--ink); }
+  /* Subtle tinted backgrounds mirror the strip's colored blocks. */
+  .schedule-events .ev.feed { color: var(--ink); background: var(--feed-soft); }
+  .schedule-events .ev.pump { background: var(--pump-soft); }
+  .schedule-events .ev.sleep { background: var(--sleep-soft); }
   .schedule-events .ev.pump,
   .schedule-events .ev.nurse { color: var(--removal-red); }
   .schedule-events .ev.pump .time,
   .schedule-events .ev.nurse .time { color: var(--removal-red); }
   .schedule-events .ev.pump .vol,
   .schedule-events .ev.nurse .vol { color: var(--removal-red); opacity: 0.85; }
-  .schedule-events .ev.play { color: var(--ink-faint); font-size: 12px; }
   .schedule-events .ev.sleep { color: var(--ink-faint); font-size: 12px; }
   .schedule-events .icon {
     width: 18px; height: 18px;
@@ -352,6 +365,11 @@
   }
   .schedule-events .ev.feed .label,
   .schedule-events .ev.pump .label { font-weight: 600; }
+  .schedule-events .ev.continuation .label {
+    font-style: italic;
+    font-weight: normal;
+    opacity: 0.75;
+  }
   .totals {
     margin-top: 14px;
     padding-top: 14px;
@@ -744,6 +762,426 @@
       padding: 0 20px 56px;
     }
   }
+
+  /* ----- Exporter (Customize & export to Google Calendar) ----- */
+  .card-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .use-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    background: var(--sage-dark);
+    color: #FFFFFF;
+    border: 1px solid var(--sage-dark);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.12s ease;
+  }
+  .use-btn:hover { background: #3F5743; }
+  .use-btn:active { transform: translateY(1px); }
+  .use-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+  .exporter-section h2 {
+    font-family: Georgia, serif;
+    font-weight: 500;
+    font-size: 22px;
+    margin: 0 0 8px;
+    color: var(--ink);
+  }
+  .exporter-intro {
+    font-size: 13px;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin: 0 0 20px;
+  }
+  .exporter-field {
+    margin-bottom: 18px;
+  }
+  .exporter-field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+  .exporter-field input[type="date"] {
+    width: 100%;
+    max-width: 220px;
+    padding: 9px 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    background: var(--card);
+    font-size: 14px;
+    color: var(--ink);
+    font-family: inherit;
+  }
+  .exporter-field .hint {
+    font-size: 12px;
+    color: var(--ink-faint);
+    margin-top: 6px;
+  }
+
+  /* Export panel: full-height flex column so the timeline can grow */
+  #panel-export .overlay-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    padding-bottom: 16px;
+  }
+  #panel-export .exporter-section {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+  /* Draggable timeline editor — flex: 1 to fill remaining vertical space */
+  .tl-wrapper {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 4px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 8px 12px;
+    margin-bottom: 12px;
+    flex: 1;
+    min-height: 180px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y; /* let the user scroll vertically; drag handlers use pointer capture */
+  }
+  .tl-axis {
+    position: relative;
+    height: 1440px; /* matches .tl-events; 60px per hour */
+  }
+  .tl-hour {
+    position: absolute;
+    left: 0; right: 4px;
+    font-size: 10px;
+    color: var(--ink-faint);
+    text-align: right;
+    border-top: 1px dashed var(--border);
+    padding-top: 1px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .tl-events {
+    position: relative;
+    background: #F8F4EC;
+    border-radius: 6px;
+    height: 1440px;
+  }
+  .tl-block {
+    position: absolute;
+    left: 3px;
+    right: 3px;
+    border-radius: 5px;
+    padding: 3px 7px 6px;
+    font-size: 12px;
+    color: #FFFFFF;
+    user-select: none;
+    cursor: grab;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    transition: box-shadow 0.12s ease;
+  }
+  .tl-block:hover { z-index: 4; box-shadow: 0 2px 6px rgba(0,0,0,0.18); }
+  .tl-block.tl-dragging {
+    cursor: grabbing;
+    z-index: 10;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.22);
+    opacity: 0.95;
+  }
+  .tl-block.feed { background: var(--feed); }
+  .tl-block.pump { background: var(--pump); }
+  .tl-block.sleep { background: var(--sleep); }
+  .tl-time {
+    font-size: 10px;
+    opacity: 0.9;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+    margin-bottom: 1px;
+    pointer-events: none;
+  }
+  .tl-label {
+    display: block;
+    width: 100%;
+    border: 1px solid transparent;
+    background: transparent;
+    color: inherit;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 1px 3px;
+    margin: 0;
+    outline: none;
+    border-radius: 3px;
+    cursor: text;
+  }
+  .tl-label:focus { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.4); }
+  .tl-x {
+    position: absolute;
+    top: 2px;
+    right: 3px;
+    width: 18px;
+    height: 18px;
+    border: none;
+    background: rgba(0,0,0,0.22);
+    color: #FFFFFF;
+    border-radius: 50%;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    font-family: inherit;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3;
+  }
+  .tl-x:hover { background: rgba(0,0,0,0.45); }
+
+  /* Removed-events restore bar */
+  .tl-removed {
+    background: var(--card);
+    border: 1px dashed var(--border-strong);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .tl-removed[hidden] { display: none; }
+  .tl-removed-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .tl-removed-head strong { color: var(--ink); }
+  .tl-restore-all {
+    border: 1px solid var(--border-strong);
+    background: var(--card);
+    color: var(--ink);
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .tl-restore-all:hover { border-color: var(--sage); color: var(--sage-dark); }
+  .tl-removed-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .tl-chip {
+    border: 1px solid var(--border-strong);
+    background: var(--bg);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 12px;
+    padding: 4px 9px 4px 8px;
+    border-radius: 999px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 220px;
+  }
+  .tl-chip:hover { border-color: var(--sage); color: var(--sage-dark); }
+  .tl-chip .tl-chip-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 170px;
+  }
+  .tl-chip .tl-chip-plus {
+    color: var(--sage-dark);
+    font-weight: 700;
+    font-size: 13px;
+    line-height: 1;
+  }
+
+  /* Collapsible import instructions */
+  .exporter-howto {
+    background: var(--sage-faint);
+    border: 1px solid #C6D6C5;
+    border-radius: 10px;
+    margin-bottom: 18px;
+    font-size: 13px;
+    color: var(--sage-dark);
+    line-height: 1.55;
+  }
+  .exporter-howto summary {
+    padding: 12px 16px;
+    cursor: pointer;
+    font-family: Georgia, serif;
+    font-weight: 500;
+    font-size: 15px;
+    color: var(--sage-dark);
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+  }
+  .exporter-howto summary::-webkit-details-marker { display: none; }
+  .exporter-howto summary::before {
+    content: '›';
+    display: inline-block;
+    transform: rotate(0deg);
+    transition: transform 0.15s ease;
+    font-size: 18px;
+    color: var(--sage-dark);
+    width: 12px;
+    line-height: 1;
+  }
+  .exporter-howto[open] summary::before { transform: rotate(90deg); }
+  .exporter-howto ol {
+    margin: 0;
+    padding: 0 16px 4px 36px;
+  }
+  .exporter-howto ol li { margin-bottom: 4px; color: var(--ink); }
+  .exporter-howto ol strong { color: var(--ink); }
+  .exporter-howto .howto-body { padding: 0 16px 12px; }
+  .exporter-howto .howto-step {
+    font-family: Georgia, serif;
+    font-weight: 500;
+    font-size: 13.5px;
+    color: var(--sage-dark);
+    margin: 10px 0 6px;
+  }
+  .exporter-howto .howto-body > .howto-step:first-child { margin-top: 0; }
+  .exporter-howto .howto-body ol { padding: 0 0 0 20px; }
+  .exporter-howto .why {
+    margin: 6px 0 0;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+  .exporter-howto .tz-warn {
+    margin: 6px 0 0;
+    padding: 8px 10px;
+    background: #FBF4E6;
+    border: 1px solid #EAD9B0;
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: #6B5A2E;
+  }
+  .exporter-howto .tz-warn strong { color: #4E411F; }
+  .tl-resize, .tl-resize-top {
+    position: absolute;
+    left: 0; right: 0;
+    height: 8px;
+    cursor: ns-resize;
+    background: transparent;
+    z-index: 2;
+  }
+  .tl-resize { bottom: 0; }
+  .tl-resize-top { top: 0; }
+  .tl-resize::after, .tl-resize-top::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 28px;
+    height: 3px;
+    background: rgba(255,255,255,0.55);
+    border-radius: 2px;
+  }
+  .tl-resize::after { bottom: 2px; }
+  .tl-resize-top::after { top: 2px; }
+  /* Compact display for short events */
+  .tl-block.tl-tiny { padding: 2px 22px 2px 6px; }
+  .tl-block.tl-tiny .tl-time { display: none; }
+  .tl-block.tl-tiny .tl-label { font-size: 10.5px; padding: 0 2px; }
+  .tl-block.tl-tiny .tl-x { top: -6px; right: -4px; width: 16px; height: 16px; font-size: 11px; }
+  .tl-block.tl-mini .tl-label { display: none; }
+  .tl-block.tl-mini .tl-time { display: none; }
+  .tl-block.tl-mini .tl-x { top: -7px; right: -4px; }
+
+  .tl-help {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin: 0 0 18px;
+    line-height: 1.5;
+  }
+  .tl-help strong { color: var(--ink); }
+
+  .exporter-instructions {
+    background: var(--sage-faint);
+    border: 1px solid #C6D6C5;
+    border-radius: 10px;
+    padding: 16px 18px;
+    font-size: 13px;
+    color: var(--sage-dark);
+    line-height: 1.55;
+    margin-bottom: 18px;
+  }
+  .exporter-instructions h4 {
+    font-family: Georgia, serif;
+    font-weight: 500;
+    font-size: 15px;
+    margin: 0 0 6px;
+    color: var(--sage-dark);
+  }
+  .exporter-instructions ol {
+    margin: 6px 0 0;
+    padding-left: 20px;
+  }
+  .exporter-instructions li { margin-bottom: 4px; color: var(--ink); }
+  .exporter-instructions strong { color: var(--ink); }
+  .exporter-instructions .tip {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #C6D6C5;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+
+  .download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 22px;
+    background: var(--sage-dark);
+    color: #FFFFFF;
+    border: 1px solid var(--sage-dark);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .download-btn:hover { background: #3F5743; }
+  .download-btn:disabled {
+    background: var(--border-strong);
+    border-color: var(--border-strong);
+    cursor: not-allowed;
+  }
+  .download-btn svg { width: 16px; height: 16px; }
+
+  @media (max-width: 600px) {
+    .exporter-head, .exporter-row {
+      grid-template-columns: 22px 12px 78px 1fr 56px;
+      gap: 6px;
+      padding: 8px 10px;
+    }
+  }
 </style>
 </head>
 <body>
@@ -776,6 +1214,12 @@
       <label for="bedtime">Your bedtime</label>
       <input type="time" id="bedtime" value="00:30" />
       <div class="hint" id="sleep-readout">Anchors the schedule and tells the planner when not to put pumps.</div>
+    </div>
+
+    <div class="field">
+      <label for="firstmeal">Baby's first morning meal</label>
+      <input type="time" id="firstmeal" value="07:00" />
+      <div class="hint" id="firstmeal-hint">The feed that follows the longest overnight stretch. Every other feed cascades from this anchor.</div>
     </div>
 
     <div class="field">
@@ -856,6 +1300,17 @@
     </svg>
     <span class="rail-label">How it's calculated</span>
   </button>
+  <button class="rail-btn" data-overlay="export" aria-label="Export to Google Calendar" aria-controls="panel-export" aria-expanded="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2"/>
+      <line x1="16" y1="2" x2="16" y2="6"/>
+      <line x1="8" y1="2" x2="8" y2="6"/>
+      <line x1="3" y1="10" x2="21" y2="10"/>
+      <polyline points="9 16 12 19 15 16"/>
+      <line x1="12" y1="13" x2="12" y2="19"/>
+    </svg>
+    <span class="rail-label">Export to calendar</span>
+  </button>
   <button class="rail-btn" data-overlay="sources" aria-label="Where these numbers come from" aria-controls="panel-sources" aria-expanded="false">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M5 4a2 2 0 0 1 2-2h12v17H7a2 2 0 0 0-2 2V4z"/>
@@ -876,6 +1331,15 @@
   </div>
   <div class="overlay-body">
     <section class="explanation" id="explanation"></section>
+  </div>
+</aside>
+
+<aside class="overlay-panel" id="panel-export" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Customize and export schedule">
+  <div class="overlay-toolbar">
+    <button class="overlay-close" type="button" aria-label="Close" data-overlay-close>&times;</button>
+  </div>
+  <div class="overlay-body">
+    <section class="exporter-section" id="exporter-body"></section>
   </div>
 </aside>
 
@@ -907,6 +1371,10 @@
         <li>
           <span class="src-title">Iglowstein I et al. (2003).</span> <span class="src-meta">"Sleep duration from infancy to adolescence: reference values and generational trends." <em>Pediatrics</em>, 111(2), 302–307.</span>
           <span class="src-note">Reference values: ~14.8h total at 1 month (8.7h night, 6.1h day); ~14.2h at 3 months. <span class="evidence ev-strong">Strong</span></span>
+        </li>
+        <li>
+          <span class="src-title">Mindell JA &amp; Owens JA. (2015).</span> <span class="src-meta"><em>A Clinical Guide to Pediatric Sleep: Diagnosis and Management of Sleep Problems</em> (3rd ed.). Lippincott Williams &amp; Wilkins.</span>
+          <span class="src-note">Age-based biological bedtime norms (drifting earlier from ~10pm at 0–2 weeks to ~7:30pm by 3 months as melatonin production matures). Used here to label naps vs night sleep from the baby's perspective rather than the parent's. <span class="evidence ev-mod">Moderate</span></span>
         </li>
         <li>
           <span class="src-title">AAP Section on Council on Communications and Media + AAP tummy time guidance.</span> <span class="src-meta">"Back to Sleep, Tummy to Play."</span>
@@ -988,6 +1456,19 @@ function wakeWindowMin(ageDays) {
   if (ageDays < 30) return 60;
   if (ageDays < 60) return 75;
   return 90;
+}
+
+// Research-based biological bedtime for newborns 0–3 months. Circadian rhythm
+// emerges over the first 8–12 weeks as melatonin production matures, so the
+// baby's bedtime gradually settles earlier with age. Used to label sleeps as
+// "Night sleep" vs "Nap" from the BABY's perspective rather than the parent's
+// awake window. Sources: Iglowstein 2003 reference data; Mindell & Owens
+// (2015) "A Clinical Guide to Pediatric Sleep" — see sources panel.
+function babyBedtimeMin(ageDays) {
+  if (ageDays < 14) return 22 * 60;       // 0–2 weeks: ~10pm (circadian rhythm still developing)
+  if (ageDays < 42) return 21 * 60;       // 2–6 weeks: ~9pm
+  if (ageDays < 84) return 20 * 60;       // 6–12 weeks: ~8pm
+  return Math.round(19.5 * 60);           // 12+ weeks: ~7:30pm
 }
 
 // Compute the daily removal plan: how many nursings vs pumps to meet the BM target.
@@ -1073,360 +1554,282 @@ function fmtTime(minFromMidnight) {
 // SCHEDULE GENERATION
 // =====================================================================
 // Returns an array of events: { startMin, durMin, type, label, ml? }
-// types: 'feed', 'pump', 'play', 'sleep'
+// types: 'feed', 'pump', 'sleep'  (awake time is the implicit gap between events)
 
-// Unified schedule generator.
-// Removal events (nursings + pumps) are placed evenly within the appropriate window
-// (awake window if skipMOTN, else 24h). Style controls a stylistic variant.
-// Bottle feeds are placed in the gaps between nursings to maintain baby's feed cadence.
+// Schedule generator — anchored on the baby's first morning meal.
+// Style controls how feeds cascade from that anchor:
+//   'even'       — every 1440/feeds minutes around the clock (most predictable)
+//   'cluster'    — 3 evening-cluster feeds tight to bedtime; rest spread across the day
+//   'dreamFeed'  — feeds spread across the day, one dream feed right before bedtime
+// After feeds are placed, nursings/bottles are classified, pumps fill the gaps
+// (respecting 90-min spacing), then sleep is laid down between feeds with a
+// wake-window buffer of implicit awake time after each feed.
 function genSchedule(inputs, style) {
-  const { feeds, wakeStartMin, bedtimeMin, skipMOTN, mlPerFeed, formulaPct, ww, plan } = inputs;
+  const { feeds, wakeStartMin, bedtimeMin, firstMealMin, ageDays, skipMOTN, mlPerFeed, formulaPct, ww, plan } = inputs;
 
-  // Edge case: if there are no bottle feeds AND no pumps, then nursing is the only
-  // way the baby eats. Can't actually skip MOTN — baby has to be nursed at night.
-  // (This happens with 100% BM + direct nursing + goals 'none' or 'establish').
+  // === Step 1: Place feed times anchored on firstMealMin ===
+  const feedTimes = placeFeedTimes(style, feeds, firstMealMin, bedtimeMin);
+
+  // === Step 2: Classify each feed slot as nurse / BM bottle / formula ===
+  // (Distributed evenly across feed slots so the cadence stays balanced.)
+  const classifications = classifyFeeds(feeds, plan, formulaPct);
+
+  // === Step 3: Place pumps in the gaps between nursings ===
+  // Edge case: if there are no bottle feeds AND no pumps, baby is nursed at night.
   const totalBottles = Math.max(0, feeds - plan.nursings);
   const effectiveSkipMOTN = (totalBottles === 0 && plan.pumps === 0) ? false : skipMOTN;
 
-  // Window in which removals are allowed
-  let windowStart = wakeStartMin;
-  let windowEnd = effectiveSkipMOTN ? bedtimeMin : wakeStartMin + 1440;
-  if (windowEnd <= windowStart) windowEnd += 1440;
-  const windowDur = windowEnd - windowStart;
-  const MIN_SPACING = 90;
+  const nursingTimes = feedTimes.filter((_, i) => classifications[i].kind === 'nurse');
+  const pumpResult = placePumpsInGaps(plan.pumps, nursingTimes, wakeStartMin, bedtimeMin, effectiveSkipMOTN);
 
-  const nursingCount = plan.nursings;
-  const pumpCount = plan.pumps;
-  let totalRemovals = nursingCount + pumpCount;
-
-  // If the window can't fit all removals at MIN_SPACING, drop pumps (not nursings)
-  const maxFit = Math.floor(windowDur / MIN_SPACING) + 1;
-  let actualNursings = Math.min(nursingCount, maxFit);
-  let actualPumps = Math.max(0, Math.min(pumpCount, maxFit - actualNursings));
-  totalRemovals = actualNursings + actualPumps;
-
-  // === Step 1: Place removals evenly in window ===
-  let removalTimes = [];
-  if (totalRemovals > 0) {
-    if (style === 'bookended' && totalRemovals >= 2) {
-      // First at wake, last at bedtime, rest evenly between — extends overnight stretch
-      const spacing = windowDur / (totalRemovals - 1);
-      for (let i = 0; i < totalRemovals; i++) {
-        // Push first slightly forward and last slightly back to keep "before bed" feel
-        let t = windowStart + i * spacing;
-        if (i === totalRemovals - 1) t = Math.min(t, windowEnd - 15);
-        removalTimes.push(t);
-      }
-    } else if (style === 'clock') {
-      // Clock-friendly: snap evenly-spaced times to nearest 15 minutes
-      const spacing = windowDur / totalRemovals;
-      for (let i = 0; i < totalRemovals; i++) {
-        const t = windowStart + i * spacing + spacing / 2;
-        removalTimes.push(Math.round(t / 15) * 15);
-      }
-    } else {
-      // Centered: even spacing with half-spacing buffer from window edges
-      const spacing = windowDur / totalRemovals;
-      for (let i = 0; i < totalRemovals; i++) {
-        removalTimes.push(windowStart + i * spacing + spacing / 2);
-      }
-    }
-  }
-  removalTimes = removalTimes.map(t => ((t % 1440) + 1440) % 1440);
-
-  // === Step 2: Designate nursings within the removal set (evenly distributed) ===
-  const isNurseFlag = new Array(totalRemovals).fill(false);
-  if (actualNursings > 0 && actualNursings <= totalRemovals) {
-    const step = totalRemovals / actualNursings;
-    for (let k = 0; k < actualNursings; k++) {
-      isNurseFlag[Math.round(k * step) % totalRemovals] = true;
-    }
-  }
-  const nursingTimes = [];
-  const pumpTimes = [];
-  for (let i = 0; i < totalRemovals; i++) {
-    if (isNurseFlag[i]) nursingTimes.push(removalTimes[i]);
-    else pumpTimes.push(removalTimes[i]);
-  }
-
-  // === Step 3: Place bottle feeds in the gaps so baby still eats ~every feedInterval ===
-  const bottleCount = Math.max(0, feeds - actualNursings);
-  const feedInterval = 1440 / feeds;
-  const bottleTimes = [];
-
-  if (bottleCount > 0) {
-    if (nursingTimes.length === 0) {
-      // No nursings — distribute bottles evenly across 24h
-      for (let i = 0; i < bottleCount; i++) {
-        bottleTimes.push((wakeStartMin + i * feedInterval + feedInterval / 2) % 1440);
-      }
-    } else {
-      // Compute gaps between consecutive nursings (treat day as ring)
-      const sortedN = [...nursingTimes].sort((a, b) => a - b);
-      const gaps = [];
-      for (let i = 0; i < sortedN.length; i++) {
-        const curr = sortedN[i];
-        const next = i + 1 < sortedN.length ? sortedN[i + 1] : sortedN[0] + 1440;
-        gaps.push({ start: curr, end: next, size: next - curr });
-      }
-      // Desired bottles per gap so total baby feeds spacing approximates feedInterval
-      const desired = gaps.map(g => Math.max(0, Math.round(g.size / feedInterval) - 1));
-      let total = desired.reduce((a, b) => a + b, 0);
-      // Adjust to exactly match bottleCount
-      while (total < bottleCount) {
-        let bestIdx = 0, bestRoom = -Infinity;
-        for (let i = 0; i < gaps.length; i++) {
-          const room = gaps[i].size / (desired[i] + 1);
-          if (room > bestRoom) { bestRoom = room; bestIdx = i; }
-        }
-        desired[bestIdx]++;
-        total++;
-      }
-      while (total > bottleCount) {
-        let bestIdx = -1, bestRoom = Infinity;
-        for (let i = 0; i < gaps.length; i++) {
-          if (desired[i] === 0) continue;
-          const room = gaps[i].size / desired[i];
-          if (room < bestRoom) { bestRoom = room; bestIdx = i; }
-        }
-        if (bestIdx === -1) break;
-        desired[bestIdx]--;
-        total--;
-      }
-      // Place bottles within each gap (evenly)
-      for (let i = 0; i < gaps.length; i++) {
-        const n = desired[i];
-        if (n === 0) continue;
-        const sub = gaps[i].size / (n + 1);
-        for (let k = 1; k <= n; k++) {
-          bottleTimes.push((gaps[i].start + k * sub) % 1440);
-        }
-      }
-    }
-  }
-
-  // === Step 4: Classify bottles as formula vs BM ===
-  const formulaCount = Math.round(feeds * formulaPct);
-  const sortedBottles = [...bottleTimes].sort((a, b) => a - b);
-  const isFormulaArr = new Array(sortedBottles.length).fill(false);
-  if (formulaCount >= sortedBottles.length) {
-    isFormulaArr.fill(true);
-  } else if (formulaCount > 0 && sortedBottles.length > 0) {
-    const step = sortedBottles.length / formulaCount;
-    for (let k = 0; k < formulaCount; k++) {
-      isFormulaArr[Math.round(k * step) % sortedBottles.length] = true;
-    }
-  }
-
-  // === Step 5: Build event list ===
+  // === Step 4: Build event list (feeds + pumps) ===
   const events = [];
-  for (const t of nursingTimes) {
-    events.push({ startMin: t, durMin: 28, type: 'feed', label: 'Nurse', ml: mlPerFeed, isFormula: false, isRemoval: true });
-  }
-  for (const t of pumpTimes) {
-    events.push({ startMin: t, durMin: 20, type: 'pump', label: 'Pump' });
-  }
-  for (let i = 0; i < sortedBottles.length; i++) {
-    const isF = isFormulaArr[i];
+  for (let i = 0; i < feeds; i++) {
+    const c = classifications[i];
     events.push({
-      startMin: sortedBottles[i], durMin: 25, type: 'feed',
-      label: isF ? 'Formula bottle' : 'BM bottle (pumped)',
-      ml: mlPerFeed, isFormula: isF, isRemoval: false
+      startMin: feedTimes[i],
+      durMin: c.kind === 'nurse' ? 28 : 25,
+      type: 'feed',
+      label: c.label,
+      ml: mlPerFeed,
+      isFormula: c.kind === 'formula',
+      isRemoval: c.kind === 'nurse'
     });
   }
+  for (const t of pumpResult.times) {
+    events.push({ startMin: t, durMin: 20, type: 'pump', label: 'Pump' });
+  }
 
-  // === Step 6: Add play/sleep between feed events ===
-  // Sort feeds, fill the gap between each consecutive feed with play (daytime) + sleep
+  // === Step 5: Lay down sleep between feeds; awake time is the implicit remainder ===
+  // For each consecutive feed pair: leave a buffer of awake time after the feed
+  // (the wake window for day gaps, ~10 min for night transitions), then sleep
+  // fills the rest of the gap. If the remaining sleep would be too short to be
+  // meaningful (e.g., evening cluster feeds), no sleep event is emitted and the
+  // whole gap reads as awake time. Day vs night uses the BABY's biological
+  // bedtime (age-based, from pediatric sleep research) rather than the parent's
+  // sleep schedule — so an 8am sleep is correctly a "Nap" even if the parent
+  // sleeps in until 9:30am.
+  const MIN_SLEEP_MIN = 15;
+  const NIGHT_TRANSITION_MIN = 10;
+  const babyBedtime = babyBedtimeMin(ageDays);
   const feedEvents = events.filter(e => e.type === 'feed').sort((a, b) => a.startMin - b.startMin);
   for (let i = 0; i < feedEvents.length; i++) {
     const f = feedEvents[i];
     const nextF = i + 1 < feedEvents.length ? feedEvents[i + 1].startMin : feedEvents[0].startMin + 1440;
     const gap = ((nextF - f.startMin) + 1440) % 1440 || 1440;
     const afterEnd = (f.startMin + f.durMin) % 1440;
-    const hour = Math.floor(f.startMin / 60);
-    const inDay = hour >= 7 && hour <= 20;
-    if (inDay) {
-      const playDur = Math.min(ww, Math.max(5, gap - f.durMin - 15));
-      events.push({ startMin: afterEnd, durMin: playDur, type: 'play', label: 'Awake / play' });
-      const sleepStart = (afterEnd + playDur) % 1440;
-      const sleepDur = Math.max(10, gap - f.durMin - playDur);
-      events.push({ startMin: sleepStart, durMin: sleepDur, type: 'sleep', label: 'Nap' });
-    } else {
-      events.push({ startMin: afterEnd, durMin: 10, type: 'play', label: 'Diaper/burp' });
-      events.push({ startMin: (afterEnd + 10) % 1440, durMin: Math.max(10, gap - f.durMin - 10), type: 'sleep', label: 'Night sleep' });
+    // Classify by the feed's end time — what's happening immediately after this feed
+    // determines whether the next sleep is a nap (baby day) or night sleep.
+    const inBabyDay = isInBabyDay(afterEnd, firstMealMin, babyBedtime);
+    const awakeBuffer = inBabyDay ? ww : NIGHT_TRANSITION_MIN;
+    const sleepDur = gap - f.durMin - awakeBuffer;
+    if (sleepDur >= MIN_SLEEP_MIN) {
+      events.push({
+        startMin: (afterEnd + awakeBuffer) % 1440,
+        durMin: sleepDur,
+        type: 'sleep',
+        label: inBabyDay ? 'Nap' : 'Night sleep'
+      });
     }
   }
 
-  return { events, actualPumps };
+  return { events, actualPumps: pumpResult.actualCount };
 }
 
-function genResponsive(inputs)  { return genSchedule(inputs, 'centered'); }
-function genClock(inputs)       { return genSchedule(inputs, 'clock'); }
-function genClusterDream(inputs){ return genSchedule(inputs, 'bookended'); }
+function genEven(inputs)      { return genSchedule(inputs, 'even'); }
+function genCluster(inputs)   { return genSchedule(inputs, 'cluster'); }
+function genDreamFeed(inputs) { return genSchedule(inputs, 'dreamFeed'); }
 
-// Build the feed roster — an array of length `feeds` describing each feed event:
-// { kind: 'nurse'|'bm-bottle'|'formula', label, isFormula, isRemoval }
-// "isRemoval" means this feed counts as milk removal from the breast (nursing only).
-// Pumps are tracked separately (they're also removals but not feeds).
-function buildFeedRoster(feeds, plan, formulaPct) {
+// Distribute `feeds` events across 24 hours anchored on the first morning meal.
+// Each variant uses a different placement strategy; cluster and dreamFeed fall back
+// to even spacing when there aren't enough feeds for their pattern to make sense.
+function placeFeedTimes(style, feeds, firstMealMin, bedtimeMin) {
+  if (feeds <= 0) return [];
+
+  // Work in "minutes from firstMealMin" space so the anchor sits at 0 and the day
+  // wraps cleanly. Bedtime in this space is somewhere in (0, 1440].
+  let bedtimeFromAnchor = ((bedtimeMin - firstMealMin) + 1440) % 1440;
+  if (bedtimeFromAnchor === 0) bedtimeFromAnchor = 1440;
+  const toClock = t => (((firstMealMin + t) % 1440) + 1440) % 1440;
+  const evenTimes = () => {
+    const interval = 1440 / feeds;
+    const out = [];
+    for (let i = 0; i < feeds; i++) out.push(toClock(i * interval));
+    return out;
+  };
+
+  if (style === 'cluster' && feeds > 4) {
+    // 3 feeds tight to bedtime: (bedtime-180, bedtime-90, bedtime).
+    // Remaining (feeds-3) spread evenly from firstMeal toward the cluster start —
+    // last spread feed lands a half-step before the cluster so they don't collide.
+    const clusterStart = bedtimeFromAnchor - 180;
+    if (clusterStart < 90) return evenTimes(); // not enough room for a cluster
+    const cluster = [clusterStart, clusterStart + 90, bedtimeFromAnchor];
+    const spreadCount = feeds - 3;
+    const spreadInterval = clusterStart / spreadCount;
+    const spread = [];
+    for (let i = 0; i < spreadCount; i++) spread.push(i * spreadInterval);
+    return [...spread, ...cluster].map(toClock);
+  }
+
+  if (style === 'dreamFeed' && feeds > 3) {
+    // (feeds-1) feeds evenly between firstMeal and (bedtime-90).
+    // One "dream feed" right before bedtime (bedtime-15) maximizes overnight stretch.
+    const spreadEnd = bedtimeFromAnchor - 90;
+    const dreamFeedAt = bedtimeFromAnchor - 15;
+    if (spreadEnd < 60) return evenTimes(); // bedtime too close to first meal
+    const spreadCount = feeds - 1;
+    const spreadInterval = spreadCount > 1 ? spreadEnd / (spreadCount - 1) : 0;
+    const result = [];
+    for (let i = 0; i < spreadCount; i++) result.push(spreadCount > 1 ? i * spreadInterval : 0);
+    result.push(dreamFeedAt);
+    return result.map(toClock);
+  }
+
+  return evenTimes();
+}
+
+// Classify `feeds` feed slots into nurse / bm-bottle / formula, distributing each
+// kind evenly across the day to keep the cadence smooth.
+function classifyFeeds(feeds, plan, formulaPct) {
   const numFormula = Math.round(feeds * formulaPct);
-  const roster = new Array(feeds).fill(null);
+  const out = new Array(feeds).fill(null);
 
-  // 1) Place formula feeds evenly
   if (numFormula >= feeds) {
-    for (let i = 0; i < feeds; i++) {
-      roster[i] = { kind: 'formula', label: 'Formula bottle', isFormula: true, isRemoval: false };
-    }
-    return roster;
+    for (let i = 0; i < feeds; i++) out[i] = { kind: 'formula', label: 'Formula bottle' };
+    return out;
   }
   if (numFormula > 0) {
     const step = feeds / numFormula;
     for (let k = 0; k < numFormula; k++) {
-      const idx = Math.round(k * step);
-      if (idx < feeds && roster[idx] === null) {
-        roster[idx] = { kind: 'formula', label: 'Formula bottle', isFormula: true, isRemoval: false };
-      }
+      const idx = Math.round(k * step) % feeds;
+      if (out[idx] === null) out[idx] = { kind: 'formula', label: 'Formula bottle' };
     }
   }
 
-  // 2) Among the remaining (BM) slots, distribute nursings vs BM bottles evenly
   const bmSlots = [];
-  for (let i = 0; i < feeds; i++) if (roster[i] === null) bmSlots.push(i);
+  for (let i = 0; i < feeds; i++) if (out[i] === null) bmSlots.push(i);
   const numNurse = Math.min(plan.nursings, bmSlots.length);
 
   if (numNurse >= bmSlots.length) {
-    bmSlots.forEach(i => {
-      roster[i] = { kind: 'nurse', label: 'Nurse', isFormula: false, isRemoval: true };
-    });
+    bmSlots.forEach(i => { out[i] = { kind: 'nurse', label: 'Nurse' }; });
   } else if (numNurse === 0) {
-    bmSlots.forEach(i => {
-      roster[i] = { kind: 'bm-bottle', label: 'BM bottle (pumped)', isFormula: false, isRemoval: false };
-    });
+    bmSlots.forEach(i => { out[i] = { kind: 'bm-bottle', label: 'BM bottle (pumped)' }; });
   } else {
     const nurseSet = new Set();
     const step = bmSlots.length / numNurse;
     for (let k = 0; k < numNurse; k++) nurseSet.add(Math.round(k * step));
     bmSlots.forEach((slotIdx, k) => {
-      if (nurseSet.has(k)) {
-        roster[slotIdx] = { kind: 'nurse', label: 'Nurse', isFormula: false, isRemoval: true };
-      } else {
-        roster[slotIdx] = { kind: 'bm-bottle', label: 'BM bottle (pumped)', isFormula: false, isRemoval: false };
-      }
+      out[slotIdx] = nurseSet.has(k)
+        ? { kind: 'nurse', label: 'Nurse' }
+        : { kind: 'bm-bottle', label: 'BM bottle (pumped)' };
     });
   }
 
-  return roster;
+  return out;
 }
 
-// Compute awake-window length in minutes (handles wraparound)
-function awakeWindowMin(wakeStartMin, bedtimeMin) {
-  return ((bedtimeMin - wakeStartMin) + 1440) % 1440;
+// True if `minute` falls inside the parent's awake window [wakeStartMin, bedtimeMin),
+// handling wraparound when bedtime is after midnight.
+function isInAwakeWindow(minute, wakeStartMin, bedtimeMin) {
+  const m = (((minute % 1440) + 1440) % 1440);
+  if (wakeStartMin === bedtimeMin) return true; // 24h awake (degenerate)
+  if (wakeStartMin < bedtimeMin) {
+    return m >= wakeStartMin && m < bedtimeMin;
+  }
+  return m >= wakeStartMin || m < bedtimeMin;
 }
 
-// Place pumps INTELLIGENTLY around existing feed/nursing events.
-// Constraint: pumps must be ≥60 min from any nursing (since both empty the breast).
-// Pumps may overlap with bottle feeds — those don't empty the breast.
-// If skipMOTN, pumps only go in the awake window.
-// Returns { events, actualCount, minSpacingMin }
-function placePumps(targetCount, wakeStartMin, bedtimeMin, skipMOTN, existingEvents) {
-  if (targetCount === 0) return { events: [], actualCount: 0, minSpacingMin: null };
+// True if `minute` falls inside the baby's "day" — from the first morning meal
+// to the age-based biological bedtime. Sleeps inside this range are naps; sleeps
+// outside are night sleep. Independent of the parent's awake window so labels
+// reflect the baby's circadian rhythm, not the parent's schedule.
+function isInBabyDay(minute, firstMealMin, babyBedtime) {
+  const m = (((minute % 1440) + 1440) % 1440);
+  if (firstMealMin === babyBedtime) return true;
+  if (firstMealMin < babyBedtime) {
+    return m >= firstMealMin && m < babyBedtime;
+  }
+  return m >= firstMealMin || m < babyBedtime;
+}
+
+// Place `targetCount` pumps in the gaps between nursings. Pumps must be ≥60 min
+// from any nursing and ≥90 min from each other. If skipMOTN, pumps stay in the
+// awake window. Returns { times, actualCount } — `actualCount` feeds the
+// supply-impact warning by reflecting how many pumps actually fit.
+function placePumpsInGaps(targetCount, nursingTimes, wakeStartMin, bedtimeMin, skipMOTN) {
+  if (targetCount <= 0) return { times: [], actualCount: 0 };
   const MIN_GAP_FROM_NURSING = 60;
   const MIN_SPACING = 90;
 
-  // Awake window in [windowStart, windowEnd], unwrapped (windowEnd may exceed 1440)
   let windowStart = wakeStartMin;
   let windowEnd = skipMOTN ? bedtimeMin : wakeStartMin + 1440;
   if (windowEnd <= windowStart) windowEnd += 1440;
 
-  // Extract nursing times (the only feed type that empties the breast)
-  const nursingTimes = (existingEvents || [])
-    .filter(e => e.type === 'feed' && e.isRemoval)
-    .map(e => {
-      let t = e.startMin;
-      while (t < windowStart) t += 1440;
-      return t;
-    })
+  // Bring all nursing times into the unwrapped window so gap math is linear.
+  const nursings = nursingTimes
+    .map(t => { let v = t; while (v < windowStart) v += 1440; return v; })
+    .filter(t => t < windowEnd + 1440)
     .sort((a, b) => a - b);
 
-  // No nursings (exclusive pumping or bottle-only): distribute uniformly in window
-  if (nursingTimes.length === 0) {
+  if (nursings.length === 0) {
     const dur = windowEnd - windowStart;
     const maxFit = Math.floor(dur / MIN_SPACING) + 1;
     const actual = Math.min(targetCount, maxFit);
+    if (actual <= 0) return { times: [], actualCount: 0 };
     const spacing = dur / actual;
-    const events = [];
+    const times = [];
     for (let i = 0; i < actual; i++) {
-      events.push({
-        startMin: (windowStart + i * spacing + spacing / 2) % 1440,
-        durMin: 20, type: 'pump', label: 'Pump'
-      });
+      times.push((windowStart + i * spacing + spacing / 2) % 1440);
     }
-    return { events, actualCount: actual, minSpacingMin: Math.round(spacing) };
+    return { times, actualCount: actual };
   }
 
-  // Build candidate gaps between consecutive nursings (treating the day as a ring)
+  // Candidate gaps between consecutive nursings (treating the day as a ring).
   const gaps = [];
-  for (let i = 0; i < nursingTimes.length; i++) {
-    const curr = nursingTimes[i];
-    const nextRaw = i + 1 < nursingTimes.length ? nursingTimes[i + 1] : nursingTimes[0] + 1440;
+  for (let i = 0; i < nursings.length; i++) {
+    const curr = nursings[i];
+    const nextRaw = i + 1 < nursings.length ? nursings[i + 1] : nursings[0] + 1440;
     const gapStart = curr + MIN_GAP_FROM_NURSING;
     const gapEnd = nextRaw - MIN_GAP_FROM_NURSING;
     if (gapEnd <= gapStart) continue;
-
-    // Clip to valid window (handle wraparound by checking both [windowStart, windowEnd] and shifted)
-    const candidates = [
-      { s: gapStart, e: gapEnd },
-      { s: gapStart - 1440, e: gapEnd - 1440 },
-      { s: gapStart + 1440, e: gapEnd + 1440 }
-    ];
-    for (const cand of candidates) {
-      const clipStart = Math.max(cand.s, windowStart);
-      const clipEnd = Math.min(cand.e, windowEnd);
-      if (clipEnd > clipStart) {
-        gaps.push({ start: clipStart, end: clipEnd, size: clipEnd - clipStart });
-      }
+    // Check shifted copies so wraparound regions still get clipped to the window.
+    for (const shift of [-1440, 0, 1440]) {
+      const clipStart = Math.max(gapStart + shift, windowStart);
+      const clipEnd = Math.min(gapEnd + shift, windowEnd);
+      if (clipEnd > clipStart) gaps.push({ start: clipStart, end: clipEnd, size: clipEnd - clipStart });
     }
   }
 
-  // Capacity per gap: how many pumps fit with MIN_SPACING
-  // A gap of size S fits floor(S/MIN_SPACING) + 1 pumps, but only if S >= 0
   const capacity = gaps.map(g => Math.max(0, Math.floor(g.size / MIN_SPACING) + 1));
   const totalCapacity = capacity.reduce((a, b) => a + b, 0);
   let toPlace = Math.min(targetCount, totalCapacity);
 
-  // Greedily allocate pumps to gaps: prefer gaps with the most remaining "room per pump"
+  // Greedy: give the next pump to the gap that will still have the most room.
   const allocated = new Array(gaps.length).fill(0);
   while (toPlace > 0) {
-    let bestIdx = -1;
-    let bestRoom = -Infinity;
+    let bestIdx = -1, bestRoom = -Infinity;
     for (let i = 0; i < gaps.length; i++) {
       if (allocated[i] >= capacity[i]) continue;
-      // room per pump after adding one more
       const room = gaps[i].size / (allocated[i] + 1);
-      if (room > bestRoom) {
-        bestRoom = room;
-        bestIdx = i;
-      }
+      if (room > bestRoom) { bestRoom = room; bestIdx = i; }
     }
     if (bestIdx === -1) break;
     allocated[bestIdx]++;
     toPlace--;
   }
 
-  // Place pumps evenly within each gap
-  const events = [];
+  const times = [];
   for (let i = 0; i < gaps.length; i++) {
     const n = allocated[i];
     if (n === 0) continue;
     const g = gaps[i];
     const spacing = g.size / n;
     for (let k = 0; k < n; k++) {
-      const t = (g.start + k * spacing + spacing / 2) % 1440;
-      events.push({ startMin: t, durMin: 20, type: 'pump', label: 'Pump' });
+      times.push((g.start + k * spacing + spacing / 2) % 1440);
     }
   }
-
-  return { events, actualCount: events.length, minSpacingMin: MIN_SPACING };
+  return { times, actualCount: times.length };
 }
 
 // =====================================================================
@@ -1522,13 +1925,23 @@ function renderAlert(warning) {
 // RENDER
 // =====================================================================
 function renderTimeline(events, sleepBand) {
-  // Vertical strip: hours run top to bottom (0 → 1440 min).
+  // Vertical strip: hours run top to bottom (0 → 1440 min). Events that wrap
+  // past midnight (e.g., a night sleep starting at 10:38pm and ending at 1am)
+  // are rendered as two blocks — main portion clipped at midnight, plus a
+  // continuation block at the top of the day — so the strip never overflows.
   const sorted = [...events].sort((a,b) => a.startMin - b.startMin);
-  const blocks = sorted.map(e => {
+  const blockParts = [];
+  sorted.forEach(e => {
+    const end = e.startMin + e.durMin;
+    const mainHeight = (Math.min(end, 1440) - e.startMin) / 1440 * 100;
     const topPct = (e.startMin / 1440) * 100;
-    const heightPct = (e.durMin / 1440) * 100;
-    return `<div class="block ${e.type}" style="top:${topPct}%;height:${heightPct}%" title="${e.label} at ${fmtTime(e.startMin)}"></div>`;
-  }).join('');
+    blockParts.push(`<div class="block ${e.type}" style="top:${topPct}%;height:${mainHeight}%" title="${e.label} at ${fmtTime(e.startMin)}"></div>`);
+    if (end > 1440) {
+      const overflowPct = (end - 1440) / 1440 * 100;
+      blockParts.push(`<div class="block ${e.type}" style="top:0;height:${overflowPct}%" title="${e.label} (continued from previous evening)"></div>`);
+    }
+  });
+  const blocks = blockParts.join('');
   let band = '';
   if (sleepBand) {
     const { startMin, endMin } = sleepBand;
@@ -1571,15 +1984,19 @@ function eventIcon(e) {
   if (e.type === 'pump')                return iconSvg('droplet', 'var(--pump)');
   if (e.type === 'feed' && e.isFormula) return iconSvg('bottle', '#B89968');
   if (e.type === 'feed')                return iconSvg('bottle', 'var(--feed)');
-  if (e.type === 'play')                return iconSvg('sun', 'var(--play)');
   if (e.type === 'sleep')               return iconSvg('moon', 'var(--sleep)');
   return '';
 }
 
 function renderEventList(events, mlPerFeed, plan) {
-  // Show all events vertically. Feeds and pumps are emphasized; play/sleep are subdued context.
+  // Each row is absolutely positioned at top = startMin and sized to height = durMin
+  // so it lines up 1:1 with the corresponding colored block on the timeline strip.
+  // The gaps between rows (where awake time falls) match the cream gaps on the strip.
+  // Events that wrap past midnight get a second "continuation" row at the top of
+  // the day so the wrapped portion still renders inside the 1440px container.
   const sorted = [...events].sort((a,b) => a.startMin - b.startMin);
-  return sorted.map(e => {
+  const rows = [];
+  sorted.forEach(e => {
     let vol = '';
     if (e.type === 'feed' && e.ml) {
       const tag = e.isFormula ? 'formula' : 'BM';
@@ -1588,31 +2005,46 @@ function renderEventList(events, mlPerFeed, plan) {
       vol = `<span class="vol">~20 min</span>`;
     }
     const rowClass = (e.type === 'feed' && e.isRemoval) ? 'feed nurse' : e.type;
-    return `<div class="ev ${rowClass}">
+    const end = e.startMin + e.durMin;
+    const mainHeight = Math.min(end, 1440) - e.startMin;
+    rows.push(`<div class="ev ${rowClass}" style="top:${e.startMin}px;height:${mainHeight}px">
       <span class="time">${fmtTime(e.startMin)}</span>
       <span class="icon">${eventIcon(e)}</span>
       <span class="label">${e.label}</span>
       ${vol}
-    </div>`;
-  }).join('');
+    </div>`);
+    if (end > 1440) {
+      const overflow = end - 1440;
+      rows.push(`<div class="ev ${rowClass} continuation" style="top:0;height:${overflow}px" title="${e.label} continues from the previous evening">
+        <span class="time"></span>
+        <span class="icon"></span>
+        <span class="label">↑ ${e.label} (continued)</span>
+      </div>`);
+    }
+  });
+  return rows.join('');
 }
 
 function renderTotals(events) {
-  const totals = { feed: 0, pump: 0, play: 0, sleep: 0 };
-  events.forEach(e => totals[e.type] += e.durMin);
+  // Awake time = anything not explicitly slept through. We don't emit awake
+  // events anymore, so we derive it as the complement of total sleep.
+  const totals = { feed: 0, pump: 0, sleep: 0 };
+  events.forEach(e => { if (totals[e.type] !== undefined) totals[e.type] += e.durMin; });
   const feedCount = events.filter(e => e.type === 'feed').length;
   const pumpCount = events.filter(e => e.type === 'pump').length;
   const feedMl = events.filter(e => e.type === 'feed').reduce((s,e) => s + (e.ml || 0), 0);
+  const awakeMin = Math.max(0, 1440 - totals.sleep);
   return `
     <div><strong>${feedCount}</strong> feeds${pumpCount ? ` · <strong>${pumpCount}</strong> pumps` : ''}</div>
     <div><strong>${fmtOz(feedMl)}</strong> milk total</div>
     <div><strong>${(totals.sleep/60).toFixed(1)}h</strong> sleep</div>
-    <div><strong>${(totals.play/60).toFixed(1)}h</strong> awake</div>
+    <div><strong>${(awakeMin/60).toFixed(1)}h</strong> awake</div>
   `;
 }
 
-function renderSchedule(name, philosophy, events, mlPerFeed, sleepBand, plan) {
+function renderSchedule(name, philosophy, events, mlPerFeed, sleepBand, plan, exportKey) {
   const { timeline, axis } = renderTimeline(events, sleepBand);
+  const exportIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 12 19 15 16"/><line x1="12" y1="13" x2="12" y2="19"/></svg>`;
   return `
     <div class="schedule-card">
       <h3>${name}</h3>
@@ -1623,6 +2055,11 @@ function renderSchedule(name, philosophy, events, mlPerFeed, sleepBand, plan) {
         <div class="schedule-events">${renderEventList(events, mlPerFeed, plan)}</div>
       </div>
       <div class="totals">${renderTotals(events)}</div>
+      <div class="card-actions">
+        <button class="use-btn" type="button" data-export-key="${exportKey}">
+          ${exportIcon}<span>Customize &amp; export to Google Calendar</span>
+        </button>
+      </div>
     </div>
   `;
 }
@@ -1634,6 +2071,7 @@ function update() {
   const birthISO = document.getElementById('birthdate').value || '2026-04-15';
   const waketime = document.getElementById('waketime').value || '09:30';
   const bedtime = document.getElementById('bedtime').value || '00:30';
+  const firstmeal = document.getElementById('firstmeal').value || '07:00';
   const bmpct = parseInt(document.getElementById('bmpct').value, 10);
   const method = document.querySelector('#method-seg button.active').dataset.val;
   const pumpGoal = document.querySelector('#pump-seg button.active').dataset.val;
@@ -1646,8 +2084,14 @@ function update() {
   // Sleep readout
   const [wh, wm] = waketime.split(':').map(Number);
   const [bh, bm] = bedtime.split(':').map(Number);
+  const [fmh, fmm] = firstmeal.split(':').map(Number);
   const wakeStartMin = wh * 60 + wm;
   const bedtimeMin = bh * 60 + bm;
+  // Baby's first meal can fall outside the breastfeeding parent's awake window —
+  // a co-caregiver may handle it. So we take whatever time the user enters and
+  // cascade feeds from there; pump placement still respects the parent's awake
+  // window separately.
+  const firstMealMin = fmh * 60 + fmm;
   const overnightGapMin = ((wakeStartMin - bedtimeMin) + 1440) % 1440;
   document.getElementById('sleep-readout').textContent =
     `Awake ${((bedtimeMin - wakeStartMin + 1440) % 1440 / 60).toFixed(1)}h · sleep window ${(overnightGapMin/60).toFixed(1)}h`;
@@ -1675,7 +2119,6 @@ function update() {
   const ww = wakeWindowMin(days);
   const plan = removalPlan(pumpGoal, days, method, formulaPct, feeds);
   const pumpsCount = plan.pumps;
-  const roster = buildFeedRoster(feeds, plan, formulaPct);
 
   // Summary cards
   const summary = document.getElementById('summary');
@@ -1744,13 +2187,15 @@ function update() {
     `;
   }
 
-  // Schedule inputs — pass the target pump count; generators place them around nursings
-  const sched = { feeds, wakeStartMin, bedtimeMin, skipMOTN, mlPerFeed, formulaPct, method, pumpsCount, ww, roster, plan };
+  // Schedule inputs — all three generators anchor feeds on firstMealMin.
+  // ageDays is passed so the generator can pick a research-based baby bedtime
+  // (the boundary between naps and night sleep is age-dependent).
+  const sched = { feeds, wakeStartMin, bedtimeMin, firstMealMin, ageDays: days, skipMOTN, mlPerFeed, formulaPct, ww, plan };
   const sleepBand = { startMin: bedtimeMin, endMin: wakeStartMin };
 
-  const a = genResponsive(sched);
-  const b = genClock(sched);
-  const c = genClusterDream(sched);
+  const a = genEven(sched);
+  const b = genCluster(sched);
+  const c = genDreamFeed(sched);
 
   // Use the worst-case (minimum) placement across schedules for the supply warning
   const actualPumps = Math.min(a.actualPumps, b.actualPumps, c.actualPumps);
@@ -1767,18 +2212,493 @@ function update() {
   });
   renderAlert(warning);
 
-  // Spacing for the user's actual scenario
-  const awakeH = ((bedtimeMin - wakeStartMin + 1440) % 1440) / 60;
-  const removalSpacingH = plan.totalRemovals > 0 ? (awakeH / plan.totalRemovals).toFixed(1) : '–';
+  // Feed interval reflects the anchor-based model: 1440 / feeds.
+  const feedIntervalH = (1440 / feeds / 60).toFixed(1);
+  const firstMealLabel = fmtTime(firstMealMin);
+  const bedtimeLabel = fmtTime(bedtimeMin);
 
-  const responsivePhilosophy = `<strong>Centered.</strong> All ${plan.totalRemovals} removals (${plan.nursings} nurse + ${plan.pumps} pump) spaced evenly across your ${awakeH.toFixed(1)}h awake window — roughly every ${removalSpacingH}h. Bottles fill gaps for baby's night feeds. <em>Most balanced; best default.</em>`;
-  const clockPhilosophy = `<strong>Clock-friendly.</strong> Same even-spacing principle, but removal times are snapped to round 15-min marks so it's easier to remember and track. Spacing is slightly less mathematically uniform as a result. <em>Use if you like memorable times like 9:00 and 11:30.</em>`;
-  const clusterPhilosophy = `<strong>Bookended (wake + bedtime).</strong> First removal right at wake, last right before bedtime — covering the long overnight stretch on both ends. Slightly tighter spacing during the day. <em>Useful if you want a "dream feed" feel at bedtime.</em>`;
+  const evenPhilosophy = `<strong>Even cadence.</strong> Starting at ${firstMealLabel}, baby feeds every <strong>${feedIntervalH}h</strong> around the clock — ${feeds} feeds total. Most predictable and easiest to plan around. <em>Best default for younger newborns (0–6 weeks).</em>`;
+  const clusterPhilosophy = `<strong>Cluster-evening.</strong> Three feeds bunched tight before your ${bedtimeLabel} bedtime (a "tank up" before sleep), with the rest spread from ${firstMealLabel} through the afternoon. Mimics real newborn cluster patterns. <em>Useful after ~6 weeks once cluster feeding emerges.</em>`;
+  const dreamPhilosophy = `<strong>Day-anchored + dream feed.</strong> Feeds spread evenly from ${firstMealLabel} through the afternoon, plus one dream feed right before bedtime (${fmtTime((bedtimeMin - 15 + 1440) % 1440)}). Maximizes the post-dream-feed overnight stretch. <em>For parents prioritizing the longest possible night sleep.</em>`;
+
+  // Stash each rendered schedule so the export buttons can look up the right events.
+  lastSchedules = {
+    even:      { name: 'Even cadence',                  events: a.events, wakeStartMin },
+    cluster:   { name: 'Cluster-evening',               events: b.events, wakeStartMin },
+    dreamFeed: { name: 'Day-anchored + dream feed',     events: c.events, wakeStartMin }
+  };
 
   document.getElementById('schedules').innerHTML =
-    renderSchedule('1. Even spacing (centered)', responsivePhilosophy, a.events, mlPerFeed, sleepBand, plan) +
-    renderSchedule('2. Clock-friendly', clockPhilosophy, b.events, mlPerFeed, sleepBand, plan) +
-    renderSchedule('3. Bookended', clusterPhilosophy, c.events, mlPerFeed, sleepBand, plan);
+    renderSchedule('1. Even cadence', evenPhilosophy, a.events, mlPerFeed, sleepBand, plan, 'even') +
+    renderSchedule('2. Cluster-evening', clusterPhilosophy, b.events, mlPerFeed, sleepBand, plan, 'cluster') +
+    renderSchedule('3. Day-anchored + dream feed', dreamPhilosophy, c.events, mlPerFeed, sleepBand, plan, 'dreamFeed');
+}
+
+// =====================================================================
+// CALENDAR EXPORT
+// =====================================================================
+// Stores the most recently generated schedule events so export buttons (which
+// live inside re-rendered HTML) can look them up by key.
+let lastSchedules = {};
+
+// Working state for the exporter UI: copy-on-open so edits don't mutate the
+// schedule itself and survive re-renders triggered by other inputs.
+let exporterState = null;
+
+function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+
+// Local "floating" datetime in ICS format: YYYYMMDDTHHMMSS (no Z, no TZID).
+// Google Calendar interprets these as local time, which is what we want for a
+// daily-recurring schedule that should ignore the importing user's timezone.
+function icsLocalDateTime(dateISO, minutesFromMidnight) {
+  const [y, mo, d] = dateISO.split('-').map(Number);
+  const dt = new Date(y, mo - 1, d);
+  dt.setMinutes(dt.getMinutes() + minutesFromMidnight);
+  return [dt.getFullYear(), pad2(dt.getMonth() + 1), pad2(dt.getDate())].join('') +
+         'T' +
+         [pad2(dt.getHours()), pad2(dt.getMinutes()), '00'].join('');
+}
+
+// UTC stamp for DTSTAMP: YYYYMMDDTHHMMSSZ.
+function icsUtcStamp(d) {
+  d = d || new Date();
+  return [d.getUTCFullYear(), pad2(d.getUTCMonth() + 1), pad2(d.getUTCDate())].join('') +
+         'T' +
+         [pad2(d.getUTCHours()), pad2(d.getUTCMinutes()), pad2(d.getUTCSeconds())].join('') +
+         'Z';
+}
+
+// RFC 5545 text escaping: backslash, semicolon, comma, newline.
+function icsEscape(s) {
+  return String(s)
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\r?\n/g, '\\n');
+}
+
+// Build the volume tag shown in the event title for feeds.
+function exporterVolumeTag(ev) {
+  if (ev.type !== 'feed' || !ev.ml) return '';
+  return fmtOz(ev.ml) + ' ' + (ev.isFormula ? 'formula' : 'BM');
+}
+
+// Emoji prefix per event type — survives the trip into Google Calendar
+// (colors don't, but emojis in the title do).
+function defaultEmoji(ev) {
+  if (ev.type === 'feed' && ev.isRemoval) return '🤱';
+  if (ev.type === 'feed' && ev.isFormula) return '🍼';
+  if (ev.type === 'feed')                 return '🍼';
+  if (ev.type === 'pump')                 return '💧';
+  if (ev.type === 'sleep')                return '🌙';
+  return '';
+}
+
+// Default summary text for an event (used as the initial Label value).
+function defaultEventLabel(ev) {
+  const vol = exporterVolumeTag(ev);
+  const emoji = defaultEmoji(ev);
+  const base = emoji ? `${emoji} ${ev.label}` : ev.label;
+  return vol ? `${base} — ${vol}` : base;
+}
+
+function openExporter(scheduleKey) {
+  const sched = lastSchedules[scheduleKey];
+  if (!sched) return;
+
+  // Sort events for display and default the series start to tomorrow.
+  const sorted = [...sched.events].sort((a, b) => a.startMin - b.startMin);
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  exporterState = {
+    scheduleName: sched.name,
+    wakeStartMin: sched.wakeStartMin,
+    startDateISO: tomorrow.toISOString().slice(0, 10),
+    events: sorted.map((e, i) => ({
+      id: 'evt-' + i,
+      type: e.type,
+      // Snap the seed values to the same 5-minute grid the drag handles use,
+      // so all interactions stay on whole minutes (ICS doesn't need seconds).
+      startMin: Math.round(e.startMin / TL_SNAP) * TL_SNAP,
+      durMin: Math.max(5, Math.round(e.durMin / TL_SNAP) * TL_SNAP),
+      label: defaultEventLabel(e),
+      isFormula: !!e.isFormula,
+      isRemoval: !!e.isRemoval,
+      included: true
+    }))
+  };
+
+  renderExporter();
+}
+
+function timeFromMin(m) {
+  const mm = Math.round(((m % 1440) + 1440) % 1440);
+  return pad2(Math.floor(mm / 60)) + ':' + pad2(mm % 60);
+}
+
+function minFromTime(s) {
+  const [h, m] = s.split(':').map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
+
+// Vertical scale of the timeline editor: 1 minute = 1 pixel → 60px / hour.
+const TL_PX_PER_MIN = 1;
+const TL_SNAP = 5; // snap drag interactions to 5-minute increments
+
+function timelineBlockHtml(ev, idx) {
+  const top = Math.round(ev.startMin * TL_PX_PER_MIN);
+  const height = Math.max(6, Math.round(ev.durMin * TL_PX_PER_MIN));
+  const sizeClass = height < 18 ? ' tl-mini' : height < 28 ? ' tl-tiny' : '';
+  const safeLabel = ev.label.replace(/"/g, '&quot;');
+  return `<div class="tl-block ${ev.type}${sizeClass}" data-idx="${idx}" style="top:${top}px;height:${height}px">
+    <div class="tl-resize-top" data-action="resize-top" title="Drag to change start time"></div>
+    <button class="tl-x" type="button" data-action="delete" aria-label="Remove event" tabindex="-1">&times;</button>
+    <div class="tl-time">${timeFromMin(ev.startMin)} · ${ev.durMin}m</div>
+    <input class="tl-label" type="text" value="${safeLabel}" data-action="label" aria-label="Event label" />
+    <div class="tl-resize" data-action="resize" title="Drag to change length"></div>
+  </div>`;
+}
+
+function chipPreview(label) {
+  // Trim the volume tail so chips stay compact.
+  const i = label.indexOf(' — ');
+  return i > 0 ? label.slice(0, i) : label;
+}
+
+function renderRemovedBar() {
+  const bar = document.getElementById('tl-removed');
+  if (!bar) return;
+  const removed = exporterState.events
+    .map((ev, idx) => ({ ev, idx }))
+    .filter(x => !x.ev.included);
+
+  if (removed.length === 0) {
+    bar.hidden = true;
+    return;
+  }
+  bar.hidden = false;
+  document.getElementById('tl-removed-count').textContent = removed.length;
+  document.getElementById('tl-removed-chips').innerHTML = removed.map(({ ev, idx }) => `
+    <button class="tl-chip" type="button" data-action="restore" data-idx="${idx}" title="Restore this event">
+      <span class="tl-chip-plus">+</span>
+      <span class="tl-chip-label">${chipPreview(ev.label).replace(/</g, '&lt;')}</span>
+    </button>
+  `).join('');
+}
+
+function renderExporter() {
+  if (!exporterState) return;
+  const { scheduleName, startDateISO, events } = exporterState;
+  const includedCount = events.filter(e => e.included).length;
+
+  // Hour ticks down the left rail
+  let hourTicks = '';
+  for (let h = 0; h <= 24; h++) {
+    const top = h * 60 * TL_PX_PER_MIN;
+    const label = h === 0 || h === 24 ? '12am'
+      : h < 12 ? h + 'am'
+      : h === 12 ? '12pm'
+      : (h - 12) + 'pm';
+    hourTicks += `<div class="tl-hour" style="top:${top}px">${label}</div>`;
+  }
+
+  const blocks = events.map((ev, idx) => ev.included ? timelineBlockHtml(ev, idx) : '').join('');
+
+  document.getElementById('exporter-body').innerHTML = `
+    <h2>Customize &amp; export</h2>
+    <p class="exporter-intro">
+      Edit the schedule below, then download an <strong>.ics</strong> file and import it into Google Calendar.
+      Each event becomes a <strong>30-day daily series</strong> marked <strong>Free</strong> (no busy time on your calendar).
+      Schedule: <em>${scheduleName}</em>.
+    </p>
+
+    <div class="exporter-field">
+      <label for="ics-start">Series start date</label>
+      <input type="date" id="ics-start" value="${startDateISO}" />
+      <div class="hint">Each event repeats daily for 30 days from this date. Events with times before your wake time are placed on the morning after the start date so the first 24-hour cycle stays aligned with your awake window.</div>
+    </div>
+
+    <div class="tl-removed" id="tl-removed" hidden>
+      <div class="tl-removed-head">
+        <span>Removed: <strong id="tl-removed-count">0</strong></span>
+        <button type="button" class="tl-restore-all" data-action="restore-all">Restore all</button>
+      </div>
+      <div class="tl-removed-chips" id="tl-removed-chips"></div>
+    </div>
+
+    <div class="tl-wrapper" id="tl-wrapper">
+      <div class="tl-axis">${hourTicks}</div>
+      <div class="tl-events" id="tl-events">${blocks}</div>
+    </div>
+
+    <p class="tl-help">
+      <strong>Drag</strong> the body of any event to move it (snaps to 5 minutes).
+      <strong>Drag the top or bottom edge</strong> to change its length.
+      Click <strong>×</strong> to remove an event (you can restore it from above the timeline).
+      Click the label to rename it — emoji prefixes carry into Google Calendar.
+    </p>
+
+    <details class="exporter-howto" open>
+      <summary>How to import into Google Calendar</summary>
+      <div class="howto-body">
+        <h5 class="howto-step">1 · Create a dedicated calendar (recommended)</h5>
+        <ol>
+          <li>In Google Calendar (<strong>calendar.google.com</strong>), find <strong>Other calendars</strong> in the left sidebar, click the <strong>+</strong>, then <strong>Create new calendar</strong>.</li>
+          <li>Name it (e.g., "Newborn schedule").</li>
+          <li>Click <strong>Create calendar</strong>.</li>
+        </ol>
+        <div class="tz-warn">
+          <strong>Set the time zone</strong> on this new calendar to the zone you'll actually be in. The downloaded events use local times (no time zone attached), so importing into a calendar with the wrong time zone will shift every event.
+        </div>
+        <p class="why">Why a dedicated calendar: you can hide it, recolor everything in one click, or delete it later to wipe every event at once.</p>
+
+        <h5 class="howto-step">2 · Import the .ics file</h5>
+        <ol>
+          <li>Click the gear icon → <strong>Settings</strong> → <strong>Import &amp; export</strong>.</li>
+          <li>Choose the downloaded <code>.ics</code> file and pick your new calendar in the dropdown.</li>
+          <li>Click <strong>Import</strong>. Each event becomes a 30-day recurring series shown as <strong>Free</strong>.</li>
+        </ol>
+      </div>
+    </details>
+
+    <button class="download-btn" id="ics-download" type="button" ${includedCount === 0 ? 'disabled' : ''}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Download .ics (${includedCount} event${includedCount === 1 ? '' : 's'})
+    </button>
+  `;
+
+  wireExporterTimeline();
+}
+
+function wireExporterTimeline() {
+  const startInput = document.getElementById('ics-start');
+  if (startInput) {
+    startInput.addEventListener('change', e => { exporterState.startDateISO = e.target.value; });
+  }
+
+  const eventsEl = document.getElementById('tl-events');
+  if (!eventsEl) return;
+
+  // Live label updates
+  eventsEl.addEventListener('input', (e) => {
+    if (e.target.dataset && e.target.dataset.action === 'label') {
+      const block = e.target.closest('.tl-block');
+      if (!block) return;
+      const idx = parseInt(block.dataset.idx, 10);
+      exporterState.events[idx].label = e.target.value;
+    }
+  });
+
+  // × delete
+  eventsEl.addEventListener('click', (e) => {
+    const xBtn = e.target.closest('[data-action="delete"]');
+    if (!xBtn) return;
+    const block = xBtn.closest('.tl-block');
+    if (!block) return;
+    const idx = parseInt(block.dataset.idx, 10);
+    exporterState.events[idx].included = false;
+    block.remove();
+    updateDownloadButtonCount();
+    renderRemovedBar();
+  });
+
+  // Restore from chip + Restore all
+  const removedBar = document.getElementById('tl-removed');
+  if (removedBar) {
+    removedBar.addEventListener('click', (e) => {
+      const chip = e.target.closest('[data-action="restore"]');
+      if (chip) {
+        const idx = parseInt(chip.dataset.idx, 10);
+        restoreEvent(idx);
+        return;
+      }
+      if (e.target.closest('[data-action="restore-all"]')) {
+        exporterState.events.forEach((ev, idx) => {
+          if (!ev.included) restoreEvent(idx, /*skipBarUpdate*/ true);
+        });
+        renderRemovedBar();
+        updateDownloadButtonCount();
+      }
+    });
+  }
+
+  // Drag (move + resize from top or bottom) via pointer events.
+  let drag = null;
+  eventsEl.addEventListener('pointerdown', (e) => {
+    const block = e.target.closest('.tl-block');
+    if (!block) return;
+
+    // Don't start dragging from the label input (text editing) or × button.
+    if (e.target.tagName === 'INPUT') return;
+    const action = e.target.dataset && e.target.dataset.action;
+    if (action === 'delete') return;
+
+    const idx = parseInt(block.dataset.idx, 10);
+    const ev = exporterState.events[idx];
+    if (!ev) return;
+
+    e.preventDefault();
+    const mode = action === 'resize' ? 'resize-bottom'
+               : action === 'resize-top' ? 'resize-top'
+               : 'move';
+    drag = {
+      block, idx, ev, mode,
+      startY: e.clientY,
+      initialStart: ev.startMin,
+      initialDur: ev.durMin,
+      initialEnd: ev.startMin + ev.durMin,
+      pointerId: e.pointerId
+    };
+    block.setPointerCapture(e.pointerId);
+    block.classList.add('tl-dragging');
+  });
+
+  eventsEl.addEventListener('pointermove', (e) => {
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    const dyMin = Math.round((e.clientY - drag.startY) / TL_PX_PER_MIN / TL_SNAP) * TL_SNAP;
+
+    if (drag.mode === 'move') {
+      let next = drag.initialStart + dyMin;
+      next = Math.max(0, Math.min(1440 - drag.ev.durMin, next));
+      drag.ev.startMin = next;
+    } else if (drag.mode === 'resize-bottom') {
+      let nextDur = drag.initialDur + dyMin;
+      const maxDur = 1440 - drag.ev.startMin;
+      nextDur = Math.max(5, Math.min(maxDur, nextDur));
+      drag.ev.durMin = nextDur;
+    } else if (drag.mode === 'resize-top') {
+      // Pull the top edge: start moves, end stays put.
+      let newStart = drag.initialStart + dyMin;
+      newStart = Math.max(0, Math.min(drag.initialEnd - 5, newStart));
+      drag.ev.startMin = newStart;
+      drag.ev.durMin = drag.initialEnd - newStart;
+    }
+    applyBlockGeometry(drag.block, drag.ev);
+  });
+
+  function endDrag(e) {
+    if (!drag || (e && e.pointerId !== drag.pointerId)) return;
+    try { drag.block.releasePointerCapture(drag.pointerId); } catch (_) {}
+    drag.block.classList.remove('tl-dragging');
+    drag = null;
+  }
+  eventsEl.addEventListener('pointerup', endDrag);
+  eventsEl.addEventListener('pointercancel', endDrag);
+
+  const btn = document.getElementById('ics-download');
+  if (btn) btn.addEventListener('click', handleDownload);
+
+  // Initialize the removed bar (may already contain items if the user re-opens).
+  renderRemovedBar();
+}
+
+function restoreEvent(idx, skipBarUpdate) {
+  const ev = exporterState.events[idx];
+  if (!ev || ev.included) return;
+  ev.included = true;
+  const eventsEl = document.getElementById('tl-events');
+  if (eventsEl) eventsEl.insertAdjacentHTML('beforeend', timelineBlockHtml(ev, idx));
+  if (!skipBarUpdate) {
+    renderRemovedBar();
+    updateDownloadButtonCount();
+  }
+}
+
+function applyBlockGeometry(block, ev) {
+  const top = Math.round(ev.startMin * TL_PX_PER_MIN);
+  const height = Math.max(6, Math.round(ev.durMin * TL_PX_PER_MIN));
+  block.style.top = top + 'px';
+  block.style.height = height + 'px';
+  const t = block.querySelector('.tl-time');
+  if (t) t.textContent = `${timeFromMin(ev.startMin)} · ${ev.durMin}m`;
+  block.classList.toggle('tl-tiny', height < 28 && height >= 18);
+  block.classList.toggle('tl-mini', height < 18);
+}
+
+function updateDownloadButtonCount() {
+  const btn = document.getElementById('ics-download');
+  if (!btn) return;
+  const n = exporterState.events.filter(e => e.included).length;
+  btn.disabled = n === 0;
+  btn.lastChild.nodeValue = ` Download .ics (${n} event${n === 1 ? '' : 's'})`;
+}
+
+function handleDownload() {
+  if (!exporterState) return;
+  const ics = generateICS(exporterState);
+  const safeName = exporterState.scheduleName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+  downloadFile(ics, `newborn-schedule-${safeName || 'export'}.ics`);
+}
+
+function generateICS(state) {
+  const { startDateISO, wakeStartMin, scheduleName, events } = state;
+  const tag = 'nsp-' + Date.now().toString(36);
+  const stamp = icsUtcStamp();
+
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Newborn Schedule Planner//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'X-WR-CALNAME:' + icsEscape('Newborn schedule — ' + scheduleName)
+  ];
+
+  // For the first 24h, events with startMin >= wake belong to startDate;
+  // events with startMin < wake belong to startDate + 1 (the next morning).
+  // After that the daily RRULE keeps them in lockstep.
+  const start = new Date(startDateISO + 'T00:00:00');
+  const nextDay = new Date(start);
+  nextDay.setDate(nextDay.getDate() + 1);
+  const nextDayISO = [
+    nextDay.getFullYear(),
+    pad2(nextDay.getMonth() + 1),
+    pad2(nextDay.getDate())
+  ].join('-');
+
+  let included = 0;
+  events.forEach((ev, idx) => {
+    if (!ev.included) return;
+    const baseDate = ev.startMin >= wakeStartMin ? startDateISO : nextDayISO;
+    const dtstart = icsLocalDateTime(baseDate, ev.startMin);
+    const dtend = icsLocalDateTime(baseDate, ev.startMin + ev.durMin);
+    lines.push(
+      'BEGIN:VEVENT',
+      'UID:' + tag + '-' + idx + '@newborn-schedule-planner',
+      'DTSTAMP:' + stamp,
+      'DTSTART:' + dtstart,
+      'DTEND:' + dtend,
+      'SUMMARY:' + icsEscape(ev.label),
+      'DESCRIPTION:' + icsEscape('Newborn schedule planner export · ' + tag),
+      'TRANSP:TRANSPARENT',
+      'RRULE:FREQ=DAILY;COUNT=30',
+      'END:VEVENT'
+    );
+    included++;
+  });
+
+  lines.push('END:VCALENDAR');
+  return lines.join('\r\n');
+}
+
+function downloadFile(text, filename) {
+  const blob = new Blob([text], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 // =====================================================================
@@ -1803,9 +2723,9 @@ document.addEventListener('DOMContentLoaded', () => {
       ['Pump',           iconSvg('droplet', 'var(--pump)')],
       ['BM bottle',      iconSvg('bottle',  'var(--feed)')],
       ['Formula bottle', iconSvg('bottle',  '#B89968')],
-      ['Awake / play',   iconSvg('sun',     'var(--play)')],
       ['Sleep',          iconSvg('moon',    'var(--sleep)')]
-    ].map(([label, svg]) => `<span><span class="legend-icon">${svg}</span> ${label}</span>`).join('');
+    ].map(([label, svg]) => `<span><span class="legend-icon">${svg}</span> ${label}</span>`).join('')
+      + '<span class="legend-gap-note">Gaps between events = awake time</span>';
   }
 
   // Build the explanation section once
@@ -1845,22 +2765,22 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
 
       <div class="explain-item">
-        <h3>${ico('clock', 'var(--pump)')} How removals are placed in the day</h3>
-        <p>All removals (nursings + pumps) are placed <strong>evenly</strong> within the same time window so the breast stays at a consistent fill level. Two physiological rules drive the spacing:</p>
+        <h3>${ico('clock', 'var(--pump)')} How feeds are placed in the day</h3>
+        <p>Every feed is anchored on the <strong>baby's first morning meal</strong> — the feed that follows the longest overnight stretch. This is more realistic than spacing feeds across the parent's awake hours: babies tell you when to start the day, and everything else cascades from there. Pumps then fill the gaps between nursings, with two physiological rules driving the spacing:</p>
         <ul>
           <li>Pumps need at least <strong>90 minutes</strong> between sessions; closer than that yields little additional milk.</li>
           <li>Pumps stay at least <strong>60 minutes</strong> from any nursing — otherwise the breast hasn't refilled enough to make the next removal worthwhile.</li>
         </ul>
-        <p>When you've chosen "skip middle-of-the-night," all removals — both nursings AND pumps — stay in your awake window. The baby's overnight feeds come from bottles instead (BM or formula). The only exception is if you're 100% direct nursing with no bottles available: in that case the baby has to nurse overnight regardless, and the tool flags this with a small note.</p>
+        <p>When you've chosen "skip middle-of-the-night," pumps stay in your awake window (the baby's overnight feeds come from bottles instead). If you're 100% direct nursing with no bottles available, the baby has to nurse overnight regardless, and the tool flags this with a small note.</p>
       </div>
 
       <div class="explain-item">
         <h3>${ico('scale', 'var(--sage)')} Why three schedules?</h3>
-        <p>All three follow the same even-spacing principle. They differ only in <em>where</em> the removals anchor within your awake window:</p>
+        <p>All three anchor on the baby's first morning meal. They differ in <em>how</em> the remaining feeds cascade from that anchor:</p>
         <ul>
-          <li><strong>Centered</strong> — equal buffer from your wake time and bedtime. The most balanced default.</li>
-          <li><strong>Clock-friendly</strong> — same approach, but times snapped to round 15-minute marks (9:00, 11:30, …) so they're easier to remember and track.</li>
-          <li><strong>Bookended</strong> — first removal right at wake, last right before bed. Useful if you want a "dream feed" feel at bedtime and a nursing first thing in the morning.</li>
+          <li><strong>Even cadence</strong> — feeds every 1440/feeds minutes around the clock. Most predictable; baby-led pacing. Best default for younger newborns (0–6 weeks).</li>
+          <li><strong>Cluster-evening</strong> — three feeds bunched tight before bedtime (a real-world cluster pattern), the rest spread across the day. Suits older newborns (~6+ weeks) once cluster feeding emerges.</li>
+          <li><strong>Day-anchored + dream feed</strong> — feeds spread across the day plus one "dream feed" right before bedtime. Maximizes the post-dream-feed overnight stretch — for parents prioritizing the longest possible night sleep.</li>
         </ul>
       </div>
 
@@ -1877,6 +2797,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('birthdate').addEventListener('change', update);
   document.getElementById('waketime').addEventListener('change', update);
   document.getElementById('bedtime').addEventListener('change', update);
+  document.getElementById('firstmeal').addEventListener('change', update);
   document.getElementById('bmpct').addEventListener('input', update);
   initSeg('#method-seg');
   initSeg('#pump-seg');
@@ -1887,7 +2808,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const railBtns = document.querySelectorAll('.rail-btn');
   const panels = {
     calculations: document.getElementById('panel-calculations'),
-    sources: document.getElementById('panel-sources')
+    sources: document.getElementById('panel-sources'),
+    export: document.getElementById('panel-export')
   };
   let lastTrigger = null;
 
@@ -1933,7 +2855,22 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   railBtns.forEach(btn => {
-    btn.addEventListener('click', () => openOverlay(btn.dataset.overlay, btn));
+    btn.addEventListener('click', () => {
+      const name = btn.dataset.overlay;
+      // The export panel needs its events populated before showing — default to
+      // the first (even cadence) schedule when triggered from the side rail.
+      if (name === 'export') openExporter('even');
+      openOverlay(name, btn);
+    });
+  });
+
+  // Delegated handler for per-card "Customize & export" buttons — the schedule
+  // cards are re-rendered on every input change, so we can't bind directly.
+  document.getElementById('schedules').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-export-key]');
+    if (!btn) return;
+    openExporter(btn.dataset.exportKey);
+    openOverlay('export', btn);
   });
   document.querySelectorAll('[data-overlay-close]').forEach(btn => {
     btn.addEventListener('click', closeOverlay);
