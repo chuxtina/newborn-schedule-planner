@@ -702,7 +702,21 @@
     display: flex;
     flex-direction: column;
   }
+  /* Export panel slides in from the right; "calculations" and "sources" stay on the left. */
+  #panel-export {
+    left: auto;
+    right: 0;
+    border-right: none;
+    border-left: 1px solid var(--border-strong);
+    box-shadow: -4px 0 28px rgba(0,0,0,0.14);
+    transform: translateX(100%);
+  }
   .overlay-panel.open {
+    transform: translateX(0);
+  }
+  /* ID selector has higher specificity than `.overlay-panel.open`, so we need
+     this explicit override for the export panel's open state. */
+  #panel-export.open {
     transform: translateX(0);
   }
   .overlay-toolbar {
