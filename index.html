@@ -122,7 +122,7 @@
     cursor: pointer;
   }
   .save-note button:hover { color: var(--ink); }
-  input[type="date"], input[type="time"] {
+  input[type="date"], input[type="time"], input[type="number"] {
     width: 100%;
     padding: 10px 12px;
     border: 1px solid var(--border-strong);
@@ -132,6 +132,8 @@
     color: var(--ink);
     font-family: inherit;
   }
+  .field.is-disabled { opacity: 0.5; }
+  .field.is-disabled input { cursor: not-allowed; }
   input[type="range"] {
     width: 100%;
     accent-color: var(--sage);
@@ -1246,6 +1248,16 @@
     </div>
 
     <div class="field">
+      <label>Baby's sex</label>
+      <div class="seg" id="sex-seg">
+        <button data-val="girl">Girl</button>
+        <button data-val="boy">Boy</button>
+        <button data-val="avg" class="active">Don't specify</button>
+      </div>
+      <div class="hint">Boys consume ~50 mL/day more than girls on average (Nielsen 2011). "Don't specify" uses the average — the difference is small (~3%).</div>
+    </div>
+
+    <div class="field">
       <label for="waketime">Your wake time</label>
       <input type="time" id="waketime" value="09:30" />
     </div>
@@ -1270,16 +1282,6 @@
     </div>
 
     <div class="field">
-      <label>Baby's sex</label>
-      <div class="seg" id="sex-seg">
-        <button data-val="girl">Girl</button>
-        <button data-val="boy">Boy</button>
-        <button data-val="avg" class="active">Don't specify</button>
-      </div>
-      <div class="hint">Boys consume ~50 mL/day more than girls on average (Nielsen 2011). "Don't specify" uses the average — the difference is small (~3%).</div>
-    </div>
-
-    <div class="field">
       <label>Feeding method</label>
       <div class="seg" id="method-seg">
         <button data-val="direct">Direct nurse</button>
@@ -1292,12 +1294,18 @@
     <div class="field">
       <label>Pumping goal</label>
       <div class="seg" id="pump-seg">
-        <button data-val="none" class="active">None</button>
+        <button data-val="none" class="active">No pumping</button>
         <button data-val="maintenance">Maintenance</button>
         <button data-val="establish">Establish supply</button>
         <button data-val="exclusive">Exclusive pumping</button>
       </div>
       <div class="hint" id="pump-hint">No pumping sessions in the schedule.</div>
+    </div>
+
+    <div class="field" id="maint-field">
+      <label for="maint-volume">Current daily production <span style="font-weight:400;color:var(--ink-soft);">(optional)</span></label>
+      <input type="number" id="maint-volume" min="0" step="10" placeholder="" />
+      <div class="hint" id="maint-hint">Applies to the Maintenance goal. Leave blank to maintain the volume your baby needs. Enter mL/day to hold a specific supply — e.g. an oversupply or stash you want to keep.</div>
     </div>
 
     <div class="field">
@@ -1563,12 +1571,16 @@ function removalPlan(goal, ageDays, method, formulaPct, feeds) {
   }
 
   if (goal === 'maintenance') {
-    // Supply is already established. A small number of pumps preserves output
-    // during stretches when the baby isn't nursing (work, errands).
-    const pumps = ageDays < 30 ? 3 : 2;
-    // Nursings = remaining BM feeds after subtracting the pumped-bottle replacements.
-    // Bottle-only is filtered out at the UI level (maintenance assumes nursing).
-    const nursings = method === 'bottle' ? 0 : Math.max(0, bmFeeds - pumps);
+    // Hold an already-established supply steady. What keeps a supply stable is the
+    // total VOLUME removed per day plus not stretching your gaps — NOT whether a
+    // removal is a nursing or a pump (a removal is a removal). So removals simply
+    // track BM feed events, split by method; the volume target is handled by the
+    // caller. This is method-agnostic, so it works with bottle-only too.
+    let nursings;
+    if (method === 'direct') nursings = bmFeeds;            // all BM at breast
+    else if (method === 'both') nursings = Math.floor(bmFeeds / 2); // half at breast
+    else nursings = 0;                                       // bottle only: all pumped
+    const pumps = Math.max(0, bmFeeds - nursings);
     return { nursings, pumps, totalRemovals: nursings + pumps, bmFeeds };
   }
 
@@ -1935,7 +1947,7 @@ function supplyWarning({ ageDays, pumpGoal, skipMOTN, targetPumps, actualPumps, 
       level: 'blocker',
       title: "Can't fit your pump goal in the awake window",
       html: `
-        <p>Your <strong>${pumpGoal === 'exclusive' ? 'exclusive pumping' : 'establish-supply'}</strong> goal needs about <strong>${targetPumps} pumps/day</strong>, but with your sleep window only <strong>${actualPumps}</strong> fit in your awake hours at the minimum useful spacing (90 min between pumps).</p>
+        <p>Your <strong>${pumpGoal === 'exclusive' ? 'exclusive pumping' : pumpGoal === 'maintenance' ? 'maintenance' : 'establish-supply'}</strong> goal needs about <strong>${targetPumps} pumps/day</strong>, but with your sleep window only <strong>${actualPumps}</strong> fit in your awake hours at the minimum useful spacing (90 min between pumps).</p>
         <p>Expected daily output if you proceed as-is: <strong>~${shortfallOz} oz below</strong> the ${targetOz} oz/day target.</p>
         <p>Three ways to close the gap:</p>
         <ul>
@@ -2190,7 +2202,7 @@ function update() {
   // Pump hint
   const pumpHints = {
     none: 'No pumping sessions in the schedule. All breastmilk feeds happen at the breast.',
-    maintenance: '2–3 pumps/day to preserve an already-stable supply alongside nursing. Assumes nursing is the primary removal mode.',
+    maintenance: 'Hold an already-established supply steady — remove the same daily volume across roughly one session per feed, without stretching your gaps. A removal is a removal, so nursing and pumping count equally. Works with any feeding method.',
     establish: 'Frequent removal in the first ~6 weeks calibrates your supply ceiling: 10 removals/day in weeks 0–2, 8/day in weeks 2–6, then dropping to one removal per BM feed once supply is set (Mohrbacher 2020; Kent 2008).',
     exclusive: 'All feeds come from pumped milk — no nursing. ~9–10 pumps/day in the first 2 weeks for prolactin signaling, then one pump per BM feed.'
   };
@@ -2208,6 +2220,18 @@ function update() {
   const ww = wakeWindowMin(days);
   const plan = removalPlan(pumpGoal, days, method, formulaPct, feeds);
   const pumpsCount = plan.pumps;
+
+  // Maintenance can hold a specific production volume (override) rather than the
+  // baby-demand-derived figure. The override changes only what you PRODUCE/remove,
+  // not what the baby consumes — schedule volumes stay on dailyBm.
+  const maintField = document.getElementById('maint-field');
+  const maintInput = document.getElementById('maint-volume');
+  const isMaint = pumpGoal === 'maintenance';
+  maintField.classList.toggle('is-disabled', !isMaint);
+  maintInput.disabled = !isMaint;
+  maintInput.placeholder = Math.round(dailyBm);
+  const overrideMl = parseFloat(maintInput.value);
+  const produceMl = (pumpGoal === 'maintenance' && overrideMl > 0) ? overrideMl : dailyBm;
 
   // Summary cards
   const summary = document.getElementById('summary');
@@ -2255,8 +2279,8 @@ function update() {
       <div class="row">
         <div class="metric">
           <div class="lbl">Breastmilk to produce</div>
-          <div class="val">${fmtOz(dailyBm)}</div>
-          <div class="sub">${fmtMl(dailyBm)} · across ${removalsCovered} removal${removalsCovered === 1 ? '' : 's'}</div>
+          <div class="val">${fmtOz(produceMl)}</div>
+          <div class="sub">${fmtMl(produceMl)} · across ${removalsCovered} removal${removalsCovered === 1 ? '' : 's'}</div>
         </div>
         <div class="metric">
           <div class="lbl">How you'll remove it</div>
@@ -2811,6 +2835,7 @@ function saveSettings() {
       bedtime: document.getElementById('bedtime').value,
       firstmeal: document.getElementById('firstmeal').value,
       bmpct: document.getElementById('bmpct').value,
+      maintVolume: document.getElementById('maint-volume').value,
       method: document.querySelector('#method-seg button.active').dataset.val,
       pumpGoal: document.querySelector('#pump-seg button.active').dataset.val,
       motn: document.querySelector('#motn-seg button.active').dataset.val,
@@ -2837,6 +2862,7 @@ function loadSettings() {
   setVal('bedtime', settings.bedtime);
   setVal('firstmeal', settings.firstmeal);
   setVal('bmpct', settings.bmpct);
+  setVal('maint-volume', settings.maintVolume);
 
   const setSeg = (selector, val) => {
     if (val == null) return;
@@ -2867,20 +2893,20 @@ function initSeg(selector) {
 
 // Which (method, goal) combinations make physiological sense.
 // - 'exclusive' goal requires bottle-only method (no nursing by definition).
-// - 'none' and 'maintenance' goals require some nursing; method='bottle' would
-//   need to pump every bottle, which contradicts "no/few pumps."
-// - 'establish' is the only goal compatible with every method (with bmpct>0).
+// - 'none' requires some nursing: no pumping + bottle-only = no source of breastmilk.
+// - 'maintenance' and 'establish' work with every method (with bmpct>0) — both are
+//   volume/frequency goals that don't care whether removals are nursings or pumps.
 // - bmpct=0 means no breastmilk at all → only goal='none' + method='bottle'.
 function validGoalsFor(method, bmpct) {
   if (bmpct === 0) return ['none'];
-  if (method === 'bottle') return ['establish', 'exclusive'];
+  if (method === 'bottle') return ['maintenance', 'establish', 'exclusive'];
   return ['none', 'maintenance', 'establish']; // direct or both
 }
 function validMethodsFor(goal, bmpct) {
   if (bmpct === 0) return ['bottle'];
   if (goal === 'exclusive') return ['bottle'];
-  if (goal === 'none' || goal === 'maintenance') return ['direct', 'both'];
-  return ['direct', 'both', 'bottle']; // establish
+  if (goal === 'none') return ['direct', 'both'];
+  return ['direct', 'both', 'bottle']; // maintenance, establish
 }
 
 // Disable buttons for invalid options and auto-switch active if it became invalid.
@@ -2959,12 +2985,12 @@ document.addEventListener('DOMContentLoaded', () => {
         <h3>${ico('heart', 'var(--removal-red)')} Removal plan: nursings + pumps</h3>
         <p>A <strong>"removal"</strong> is anything that empties milk from the breast — a nursing or a pump. Both signal your body to make more milk. The total number depends on your goal:</p>
         <ul>
-          <li><strong>None</strong> — every BM feed is at the breast; no extra pumps. Only compatible with feeding methods that include nursing (Direct nurse or Both).</li>
-          <li><strong>Maintenance</strong> — 2–3 pumps/day to preserve an already-stable supply during stretches away from the baby. Like "None," assumes some nursing — not compatible with Bottle-only.</li>
+          <li><strong>No pumping</strong> — every BM feed is at the breast; no extra pumps. Only compatible with feeding methods that include nursing (Direct nurse or Both).</li>
+          <li><strong>Maintenance</strong> — hold an already-established supply steady. What keeps a supply stable is the total <em>volume</em> you remove each day plus not stretching your gaps — not whether a removal is a nursing or a pump. So removals just track your BM feeds (split by feeding method), and the volume defaults to what your baby needs. You can override it with your current daily production (mL) to maintain a specific level — e.g. an oversupply or stash. Because it's volume- and frequency-based rather than tied to nursing, it works with <em>any</em> feeding method, including Bottle-only. <span class="evidence ev-low">Practitioner consensus</span></li>
           <li><strong>Establish supply</strong> — the first ~6 weeks set your supply ceiling via prolactin-receptor density (Mohrbacher 2020). Aim for ~10 removals/day in weeks 0–2 and ~8/day weeks 2–6. Nursings count toward that total, so if you nurse 5 times you only need a few additional pumps. After 6 weeks, supply is calibrated and you only need removals to match daily BM feeds — at that point this collapses to the same cadence as Maintenance.</li>
           <li><strong>Exclusive pumping</strong> — one pump per BM feed, with extra frequency (~9–10/day) in the first 2 weeks for prolactin signaling. By definition no nursing, so only compatible with Bottle-only.</li>
         </ul>
-        <p>Some combinations are physiologically impossible and the tool will grey them out — e.g., Bottle-only + None has no source of breastmilk, and Direct nurse + Exclusive pumping is a contradiction.</p>
+        <p>Some combinations are physiologically impossible and the tool will grey them out — e.g., Bottle-only + No pumping has no source of breastmilk, and Direct nurse + Exclusive pumping is a contradiction.</p>
         <p>This is the answer to "do nursings count as pumps?" — yes, they do, and the math reflects that.</p>
       </div>
 
@@ -3003,6 +3029,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('bedtime').addEventListener('change', update);
   document.getElementById('firstmeal').addEventListener('change', update);
   document.getElementById('bmpct').addEventListener('input', update);
+  document.getElementById('maint-volume').addEventListener('input', update);
   initSeg('#method-seg');
   initSeg('#pump-seg');
   initSeg('#motn-seg');
