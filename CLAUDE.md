@@ -9,6 +9,9 @@ Single-file HTML tool (index.html). Self-contained — embedded CSS and vanilla 
 
 ## Architecture
 - Inputs at the top of <body> feed into update() in the bottom <script>.
-- removalPlan() is the core physiological model.
-- genSchedule() produces the three schedule variants.
+- removalPlan() is the core physiological model; sexMultiplier() adjusts the daily milk volume.
+- genSchedule() produces the three schedule variants, anchored on the baby's first morning meal (placeFeedTimes()).
+- applyConstraints() / validGoalsFor() / validMethodsFor() keep the input segments from forming invalid combinations.
+- saveSettings() / loadSettings() persist inputs in localStorage under SETTINGS_KEY.
+- The export panel (openExporter(), renderExporter(), wireExporterTimeline()) lets the user customize events and generateICS() builds a downloadable .ics for Google Calendar — all client-side.
 - ICON_PATHS and iconSvg() handle inline SVGs.

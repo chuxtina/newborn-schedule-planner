@@ -6,10 +6,12 @@ A research-backed planner for newborn (0–3 months) feeding, pumping, and sleep
 
 ## What it does
 
-- Computes a daily milk target based on your baby's age and your breastmilk-vs-formula split
-- Generates three sample 24-hour schedules (centered, clock-friendly, bookended)
+- Computes a daily milk target based on your baby's age, sex, and your breastmilk-vs-formula split
+- Generates three sample 24-hour schedules, each anchored on the baby's first morning meal
 - Models the physiology of milk removal — nursings + pumps with realistic spacing rules
 - Flags supply trade-offs when the overnight gap is long enough to affect production
+- Lets you customize a schedule and export it to Google Calendar as a downloadable .ics file
+- Remembers your inputs between visits (saved locally in your browser)
 - Cites every research-backed number in a side-panel sources view
 
 ## Run locally
