@@ -103,6 +103,25 @@
     color: var(--ink-faint);
     margin-top: 6px;
   }
+  .save-note {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--ink-faint);
+    line-height: 1.5;
+  }
+  .save-note button {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    color: var(--ink-soft);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .save-note button:hover { color: var(--ink); }
   input[type="date"], input[type="time"] {
     width: 100%;
     padding: 10px 12px;
@@ -1272,6 +1291,11 @@
       </div>
       <div class="hint">Defaults to skip. If you skip and your overnight gap is long, the planner will flag any supply trade-off.</div>
     </div>
+
+    <p class="save-note">
+      Your inputs are saved automatically in this browser only — they stay on
+      your device and are never sent anywhere. <button type="button" id="reset-settings">Reset to defaults</button>
+    </p>
   </aside>
 
   <!-- ============ OUTPUT ============ -->
@@ -2246,6 +2270,9 @@ function update() {
     renderSchedule('1. Even cadence', evenPhilosophy, a.events, mlPerFeed, sleepBand, plan, 'even') +
     renderSchedule('2. Cluster-evening', clusterPhilosophy, b.events, mlPerFeed, sleepBand, plan, 'cluster') +
     renderSchedule('3. Day-anchored + dream feed', dreamPhilosophy, c.events, mlPerFeed, sleepBand, plan, 'dreamFeed');
+
+  // Persist the current inputs locally so they survive a page reload.
+  saveSettings();
 }
 
 // =====================================================================
@@ -2716,6 +2743,62 @@ function downloadFile(text, filename) {
 }
 
 // =====================================================================
+// LOCAL SETTINGS PERSISTENCE
+// Inputs are stored in the browser's localStorage. This is purely
+// client-side: the data lives on the user's machine, is never transmitted
+// to any server (this page has no backend), and is readable only by this
+// same site in this same browser. Every access is wrapped in try/catch so
+// that private-browsing modes or disabled storage degrade gracefully.
+// =====================================================================
+const SETTINGS_KEY = 'newborn-schedule-settings-v1';
+
+function saveSettings() {
+  try {
+    const settings = {
+      birthdate: document.getElementById('birthdate').value,
+      waketime: document.getElementById('waketime').value,
+      bedtime: document.getElementById('bedtime').value,
+      firstmeal: document.getElementById('firstmeal').value,
+      bmpct: document.getElementById('bmpct').value,
+      method: document.querySelector('#method-seg button.active').dataset.val,
+      pumpGoal: document.querySelector('#pump-seg button.active').dataset.val,
+      motn: document.querySelector('#motn-seg button.active').dataset.val
+    };
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  } catch (e) {
+    /* storage unavailable (private mode / disabled) — silently skip */
+  }
+}
+
+function loadSettings() {
+  let settings;
+  try {
+    settings = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+  } catch (e) {
+    return;
+  }
+  if (!settings) return;
+
+  const setVal = (id, val) => { if (val != null) document.getElementById(id).value = val; };
+  setVal('birthdate', settings.birthdate);
+  setVal('waketime', settings.waketime);
+  setVal('bedtime', settings.bedtime);
+  setVal('firstmeal', settings.firstmeal);
+  setVal('bmpct', settings.bmpct);
+
+  const setSeg = (selector, val) => {
+    if (val == null) return;
+    const btn = document.querySelector(`${selector} button[data-val="${val}"]`);
+    if (!btn) return;
+    document.querySelectorAll(`${selector} button`).forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  };
+  setSeg('#method-seg', settings.method);
+  setSeg('#pump-seg', settings.pumpGoal);
+  setSeg('#motn-seg', settings.motn);
+}
+
+// =====================================================================
 // EVENT WIRING
 // =====================================================================
 function initSeg(selector) {
@@ -2816,6 +2899,15 @@ document.addEventListener('DOMContentLoaded', () => {
   initSeg('#method-seg');
   initSeg('#pump-seg');
   initSeg('#motn-seg');
+
+  // Restore any locally-saved inputs, overriding the defaults above.
+  loadSettings();
+
+  // Reset clears the saved data and reloads so every input returns to default.
+  document.getElementById('reset-settings').addEventListener('click', () => {
+    try { localStorage.removeItem(SETTINGS_KEY); } catch (e) { /* ignore */ }
+    location.reload();
+  });
 
   // ----- Side-rail overlay system -----
   const overlayBackdrop = document.getElementById('overlay-backdrop');
